@@ -56,7 +56,7 @@ def test_noisy_train_shape(call_class):
 
 # Test names of columns have changed (i.e. for their existence.)
 # And they have the correct shape (no repeats)
-def test_noisy_column_names_changed(call_class):
+def test_noisy_column_names_changed_col_name_success(call_class):
     df = call_class.unoptimized_read_noisy()
 
     assert df["0100_01_01_0"].shape == (55,)
@@ -71,9 +71,54 @@ def test_params_train_shape(call_class):
     assert np.array(df).shape == (55, 3)
 
 
-def test_params_column_names_changed(call_class):
+def test_params_column_names_changed_col_name_success(call_class):
     df = call_class.unoptimized_read_params()
 
     assert df["0100_01_01"].shape == (55,)
     assert df["0052_01_01"].shape == (55,)
     assert df["0100_01_01"].shape == (55,) 
+
+
+# Check for reading extra 6 parameters in noisy file are correct ordering. 
+# Each file's are appended to the columns
+def test_read_noisy_extra_param_shape(call_class):
+    df = call_class.read_noisy_extra_param()
+
+    assert np.array(df).shape == (6, 3)
+
+
+def test_read_noisy_extra_param_changed_col_name_success(call_class):
+    df = call_class.read_noisy_extra_param()
+
+    assert df["0100_01_01"].shape == (6,)
+    assert df["0052_01_01"].shape == (6,)
+    assert df["0100_01_01"].shape == (6,)
+
+
+def test_read_noisy_extra_param_data(call_class):
+    df = call_class.read_noisy_extra_param()
+
+    for i in range(6):
+        assert type(df["0100_01_01"][i]) == np.float64
+
+
+# Same test for params 2 parameters: semimajor axis (sma) and inclination (incl) test. 
+def test_read_params_extra_param_shape(call_class):
+    df = call_class.read_params_extra_param()
+
+    assert np.array(df).shape == (2, 3)
+
+
+def test_read_params_extra_param_changed_col_name_success(call_class):
+    df = call_class.read_params_extra_param()
+
+    assert df["0100_01_01"].shape == (2,)
+    assert df["0052_01_01"].shape == (2,)
+    assert df["0100_01_01"].shape == (2,)
+
+
+def test_read_params_extra_param_data(call_class):
+    df = call_class.read_params_extra_param()
+
+    for i in range(2):
+        assert type(df["0052_01_01"][i]) == np.float64

@@ -1,3 +1,4 @@
+import itertools
 import os
 import numpy as np
 import pandas as pd
@@ -89,6 +90,120 @@ class read_Ariel_dataset():
                 predefined = pd.concat([predefined, curr], axis=1)
             except Exception as e:
                 predefined = curr
+                print(f"{type(e)}: {e}")
+
+        return predefined
+
+
+    def read_noisy_extra_param(self):
+        """
+        Read the extra 6 stellar and planet parameters in noisy files. 
+        """
+        header = ["star_temp", "star_logg", "star_rad", "star_mass", "star_k_mag", "period"]
+        
+        predefined = pd.DataFrame()
+
+        counter = 0
+
+        for item in self.noisy_list:
+            temp_storage_float = []
+            relative_file_path = self.noisy_path + "/" + item
+
+            print(relative_file_path)
+
+            with open(relative_file_path, "r") as f:
+                temp_storage_str = list(itertools.islice(f, 6))
+
+            # Preprocess for numbers only
+            for string in temp_storage_str:
+                # Separate the digits and the non-digits.
+                new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
+
+                # Only new_str[0] is the one we want to omit.
+                # We want to join back into a single string because "." previously is classifed
+                # as non-digit. 
+                new_str = "".join(new_str[1:])  
+
+                # Convert to float. 
+                temp_storage_float.append(float(new_str))
+
+            # Convert to pandas DataFrame. 
+            temp_storage_float = pd.DataFrame(temp_storage_float)
+
+            # Define file name
+            names = [item[-14:-4]]
+
+            # Change the column name
+            temp_storage_float.rename(columns = 
+                {x: y for x, y in zip(temp_storage_float.columns, names)}, 
+                inplace=True
+            )
+
+            # Change the row names for predefined (optional for readability)
+            temp_storage_float.rename(index = {x: y for x, y in zip(range(6), header)},
+                                    inplace=True)
+
+            try:
+                predefined = pd.concat([predefined, temp_storage_float], axis=1)
+            except Exception as e:
+                predefined = temp_storage_float
+                print(f"{type(e)}: {e}")
+
+        return predefined
+
+
+    def read_params_extra_param(self):
+        """
+        Read the extra 2 intermediate target params in the params files. 
+        """
+        header = ["sma", "incl"]
+        
+        predefined = pd.DataFrame()
+
+        counter = 0
+
+        for item in self.params_list:
+            temp_storage_float = []
+            relative_file_path = self.params_path + "/" + item
+
+            print(relative_file_path)
+
+            with open(relative_file_path, "r") as f:
+                temp_storage_str = list(itertools.islice(f, 2))
+
+            # Preprocess for numbers only
+            for string in temp_storage_str:
+                # Separate the digits and the non-digits.
+                new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
+
+                # Only new_str[0] is the one we want to omit.
+                # We want to join back into a single string because "." previously is classifed
+                # as non-digit. 
+                new_str = "".join(new_str[1:])  
+
+                # Convert to float. 
+                temp_storage_float.append(float(new_str))
+
+            # Convert to pandas DataFrame. 
+            temp_storage_float = pd.DataFrame(temp_storage_float)
+
+            # Define file name
+            names = [item[-14:-4]]
+
+            # Change the column name
+            temp_storage_float.rename(columns = 
+                {x: y for x, y in zip(temp_storage_float.columns, names)}, 
+                inplace=True
+            )
+
+            # Change the row names for predefined (optional for readability)
+            temp_storage_float.rename(index = {x: y for x, y in zip(range(6), header)},
+                                    inplace=True)
+
+            try:
+                predefined = pd.concat([predefined, temp_storage_float], axis=1)
+            except Exception as e:
+                predefined = temp_storage_float
                 print(f"{type(e)}: {e}")
 
         return predefined
