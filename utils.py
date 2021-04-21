@@ -16,11 +16,11 @@ class read_Ariel_dataset():
         """
         For reading Ariel Dataset. 
 
-        :param noisy_path: (python list of filenames) The *relative path* from the current 
+        :param noisy_path: (str) The *relative path's parent directory* from the current 
             working directory to all noisy files. For local files start with "./", for 
             colab files alternatively start with "/content/" (and "./" works fine). 
 
-        :param params_path: (python list of filenames) The *relative path* from the current
+        :param params_path: (str) The *relative path's parent directory* from the current
             working directory to all params files. For local files start with "./", for 
             colab files alternatively start with "/content/" (and "./" works fine). 
 
@@ -35,6 +35,10 @@ class read_Ariel_dataset():
         self.params_path = params_path
         self.start_read = start_read
 
+        # list all files in path(s). 
+        self.noisy_list= os.listdir(self.noisy_path)
+        self.params_list = os.listdir(self.params_path)
+
 
     def unoptimized_read_noisy(self):
         """
@@ -42,12 +46,17 @@ class read_Ariel_dataset():
         First axis is the time series axis. So a file with 300x55, read 
         3 files would be 900x55. 
         """
+
+
         predefined = pd.DataFrame()
 
-        for item in self.noisy_path: 
+        for item in self.noisy_list: 
+            # Concatenate filename and their parent folder. 
+            relative_file_path = self.noisy_path + "/" + item
+
             # Renaming the columns
             names = [item[-14:-4] + f"_{i}" for i in range(n_timesteps)]
-            curr = pd.read_csv(item, delimiter="\t", skiprows=6, header=None)
+            curr = pd.read_csv(relative_file_path, delimiter="\t", skiprows=6, header=None)
             
             curr.rename(columns={x: y for x, y in zip(curr.columns, names)}, inplace=True)
 
@@ -59,12 +68,34 @@ class read_Ariel_dataset():
                 print(f"{type(e)}: {e}")
 
         return predefined
-
         
 
     def unoptimized_read_params(self):
         """
         Read params files greedily, stacking them on the first axis. 
         """
-        raise NotImplementedError("Will be implemented in next release.")
+        predefined = pd.DataFrame()
+
+        for item in self.params_list: 
+            # Relative file path: 
+            relative_file_path = self.params_path + "/" + item
+
+            names = [item[-14:-4]]  # Have to be a list to take effect
+            curr = pd.read_csv(relative_file_path, delimiter="\t", skiprows=2, header=None).T
+
+            curr.rename(columns = {x: y for x, y in zip(curr.columns, names)}, inplace=True)
+
+            try:
+                predefined = pd.concat([predefined, curr], axis=1)
+            except Exception as e:
+                predefined = curr
+                print(f"{type(e)}: {e}")
+
+        return predefined
     
+
+    def data_augmentation(self):
+        """
+        Data augmentation: What is being done to the data. 
+        """
+        raise NotImplementedError("Yet to be implemented.")
