@@ -88,11 +88,7 @@ class read_Ariel_dataset():
             curr.rename(columns={x: y for x, y in zip(curr.columns, names)}, inplace=True)
 
             # Concatenating the pandas. 
-            try: 
-                predefined = pd.concat([predefined, curr], axis=1)
-            except Exception as e:
-                predefined = curr
-                print(f"{type(e)}: {e}")
+            predefined = pd.concat([predefined, curr], axis=1)
 
         return predefined
         
@@ -112,11 +108,8 @@ class read_Ariel_dataset():
 
             curr.rename(columns = {x: y for x, y in zip(curr.columns, names)}, inplace=True)
 
-            try:
-                predefined = pd.concat([predefined, curr], axis=1)
-            except Exception as e:
-                predefined = curr
-                print(f"{type(e)}: {e}")
+
+            predefined = pd.concat([predefined, curr], axis=1)
 
         return predefined
 
@@ -169,11 +162,7 @@ class read_Ariel_dataset():
             temp_storage_float.rename(index = {x: y for x, y in zip(range(6), header)},
                                     inplace=True)
 
-            try:
-                predefined = pd.concat([predefined, temp_storage_float], axis=1)
-            except Exception as e:
-                predefined = temp_storage_float
-                print(f"{type(e)}: {e}")
+            predefined = pd.concat([predefined, temp_storage_float], axis=1)
 
         return predefined
 
@@ -226,11 +215,7 @@ class read_Ariel_dataset():
             temp_storage_float.rename(index = {x: y for x, y in zip(range(6), header)},
                                     inplace=True)
 
-            try:
-                predefined = pd.concat([predefined, temp_storage_float], axis=1)
-            except Exception as e:
-                predefined = temp_storage_float
-                print(f"{type(e)}: {e}")
+            predefined = pd.concat([predefined, temp_storage_float], axis=1)
 
         return predefined
     
@@ -259,5 +244,13 @@ class read_Ariel_dataset():
                 for j in range(n_wavelengths):
 
                     df[str(label_name) + "_" + str(i)][j] = 1
+
+
+        # Transformation 2: -1 to all data points in the file. 
+        df = df - 1
+
+        # Transformation 3: Values rescaled by dividing by 0.06 for standard deviation
+        # closer to unity. 
+        df /= 0.04
 
         return df
