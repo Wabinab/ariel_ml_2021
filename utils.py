@@ -13,12 +13,16 @@ n_timesteps = 300
 
 class read_Ariel_dataset():
     
-    def __init__(self, noisy_path, params_path, start_read):
+    def __init__(self, noisy_path_train, noisy_path_test, params_path, start_read):
         """
         For reading Ariel Dataset. 
 
-        :param noisy_path: (str) The *relative path's parent directory* from the current 
-            working directory to all noisy files. For local files start with "./", for 
+        :param noisy_path_train: (str) The *relative path's parent directory* from the current 
+            working directory to all noisy training files. For local files start with "./", for 
+            colab files alternatively start with "/content/" (and "./" works fine). 
+
+        :param noisy_path_train: (str) The *relative path's parent directory* from the current 
+            working directory to all noisy test files. For local files start with "./", for 
             colab files alternatively start with "/content/" (and "./" works fine). 
 
         :param params_path: (str) The *relative path's parent directory* from the current
@@ -32,28 +36,50 @@ class read_Ariel_dataset():
 
         super().__init__()
 
-        self.noisy_path = noisy_path
+        self.noisy_path = noisy_path_train
+        self.noisy_path_test = noisy_path_test
         self.params_path = params_path
         self.start_read = start_read
 
         # list all files in path(s). 
         self.noisy_list= os.listdir(self.noisy_path)
+        self.noisy_list_test = os.listdir(self.noisy_path_test)
         self.params_list = os.listdir(self.params_path)
 
 
-    def unoptimized_read_noisy(self):
+    def _choose_train_or_test(self, folder="noisy_train"):
+        """Private function to choose train or test"""
+
+        if folder == "noisy_train":
+            path = self.noisy_path
+            files = self.noisy_list
+        elif folder == "noisy_test":
+            path = self.noisy_path_test
+            files = self.noisy_list_test
+        else:
+            raise FileNotFoundError("Not in the list (noisy_train, noisy_test). "
+                "Please input the choices in the list stated and try again.")
+
+        return path, files
+
+
+    def unoptimized_read_noisy(self, folder="noisy_train"):
         """
         Read noisy files greedily, stacking them on the first axis. 
         First axis is the time series axis. So a file with 300x55, read 
         3 files would be 900x55. 
+
+        :param folder (str): Which folder to do baseline transition. Choices: 
+            "noisy_train" (default), "noisy_test". 
         """
 
+        path, files = self._choose_train_or_test(folder=folder)
 
         predefined = pd.DataFrame()
 
-        for item in self.noisy_list: 
+        for item in files: 
             # Concatenate filename and their parent folder. 
-            relative_file_path = self.noisy_path + "/" + item
+            relative_file_path = path + "/" + item
 
             # Renaming the columns
             names = [item[-14:-4] + f"_{i}" for i in range(n_timesteps)]
@@ -209,8 +235,29 @@ class read_Ariel_dataset():
         return predefined
     
 
-    def data_augmentation(self):
+    def data_augmentation_baseline(self, folder="noisy_train"):
         """
-        Data augmentation: What is being done to the data. 
+        Data augmentation: What is being done to the data by the Baseline
+            model done by the organizer. 
+
+        :param folder (str): Which folder to do baseline transition. Choices: 
+            "noisy_train" (default), "noisy_test". 
         """
-        raise NotImplementedError("Yet to be implemented.")
+        # Read file
+        df = self.unoptimized_read_noisy(folder=folder)
+
+        path, files = self._choose_train_or_test(folder=folder)
+
+        # Transformation 1: First 30 points of each light curve are replaced
+        # by 1 to reduce the impact from the ramps.
+
+        # Get all files according to how column names are defined.
+        label_names = [x[-14:-4] for x in files]
+
+        for label_name in label_names:
+            for i in range(self.start_read):
+                for j in range(n_wavelengths):
+
+                    df[str(label_name) + "_" + str(i)][j] = 1
+
+        return df
