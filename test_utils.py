@@ -3,6 +3,10 @@ Unit tests for utils.py
 """
 import pytest 
 import os
+from scipy.stats import normaltest
+
+import warnings
+warnings.simplefilter("ignore")
 
 from utils import *
 
@@ -175,6 +179,7 @@ def test_read_params_extra_param_data(call_class):
 
 # Check that Baseline model transformation works as expected. 
 # To be changed when transformation changes. 
+@pytest.mark.slow
 def test_data_augmentation_baseline_replace_first_N_points(call_class):
     df = call_class.data_augmentation_baseline(folder="noisy_train")
 
@@ -194,6 +199,7 @@ def test_data_augmentation_baseline_replace_first_N_points(call_class):
 
 
 # To be changed when transformation changes. 
+@pytest.mark.slow
 def test_data_augmentation_baseline_no_replace_other_points(call_class):
     df = call_class.data_augmentation_baseline(folder="noisy_train")
 
@@ -229,3 +235,39 @@ def test_data_augmentation_baseline_standard_deviation_near_one(call_class):
 
     assert df.std(1).max() > 1
     assert df.std(1).min() < 1
+
+
+# Yeo-Johnson transformation
+@pytest.mark.slow
+def test_yeo_johnson_transform_normal_dist_threshold_one_thousandths(call_class):
+    df = call_class.yeo_johnson_transform(folder="noisy_train")
+    
+    for key, data in df.iterrows():
+        k2, p = normaltest(data)
+
+        assert p <= 0.001
+
+
+@pytest.mark.slow
+def test_yeo_johnson_transform_pass_in_alternative_df(call_class):
+    df = call_class.data_augmentation_baseline(folder="noisy_test")
+
+    df = call_class.yeo_johnson_transform(from_baseline=False, dataframe=df)
+
+    for key, data in df.iterrows():
+        k2, p = normaltest(data)
+
+        assert p <= 0.001
+
+
+def test_without_yeo_johnson_transform_not_normal(call_class):
+    df = call_class.data_augmentation_baseline()
+    df = df[:300]
+    ptot = 0
+
+    for key, data in df.iterrows():
+        k2, p = normaltest(data)
+
+        ptot += p
+
+    assert ptot >= 0.001
