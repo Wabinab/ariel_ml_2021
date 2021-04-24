@@ -6,3 +6,4 @@ ipywidgets
 pytest
 scipy
 scikit-learn
+
