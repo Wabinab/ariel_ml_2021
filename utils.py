@@ -1,10 +1,15 @@
+import copy
 import itertools
 import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from sklearn.preprocessing import PowerTransformer
 
 import tensorflow as tf
+
+import warnings
+warnings.simplefilter("ignore")
 
 
 n_wavelengths = 55
@@ -254,3 +259,48 @@ class read_Ariel_dataset():
         df /= 0.04
 
         return df
+
+
+    def yeo_johnson_transform(self, from_baseline=True, dataframe=None, **kwargs):
+        """
+        The Yeo-Johnson Transform: https://www.stat.umn.edu/arc/yjpower.pdf
+        To "normalize" a non-normal distribution (i.e. transform from non-Gaussian
+        to Gaussian distribution), for a mix of positive and negative numbers, 
+        (or strictly positive or strictly negative). 
+
+        :param from_baseline (bool): get data from data_augmentation_baseline
+            directly or insert data yourself? Default to True. 
+        
+        :param dataframe (pandas.DataFrame): the data to be passed in. Only to be used
+            if from_baseline = False, otherwise default to None.
+        """
+        if from_baseline == True:
+            df = self.data_augmentation_baseline(**kwargs)
+
+        else:
+            df = dataframe
+
+        pt = PowerTransformer(method="yeo-johnson")
+
+        try:
+            new_df = pd.DataFrame()
+
+            for key, value in df.iterrows():
+                data = np.array(value)
+                data = data.reshape(-1, 1)
+                pt.fit(data)
+                transformed_data = pt.transform(data)
+
+                new_df.append(pd.DataFrame(transformed_data))
+
+        except AttributeError as e:
+            # 'Series' object has no attribute 'iterrows'
+
+            data = np.array(df)
+            data = data.reshape(-1, 1)
+            pt.fit(data)
+            transformed_data = pt.transform(data)
+
+            new_df = transformed_data
+
+        return new_df
