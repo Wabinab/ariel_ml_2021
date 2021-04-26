@@ -9,3 +9,6 @@ April 22, 2021
   be preprocessed every time it loads. The decision on a decided preprocessing technique requires discussion
   with Rachel. 
 
+Downsides currently: 
+- All methods of reading is an extreme bottleneck. Flow from directory does not flow as smoothly as we wanted
+  it to perhaps because of the loop operations and concatenation purposes. 
