@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from sklearn.preprocessing import PowerTransformer
+from scipy.stats import yeojohnson
 
 import tensorflow as tf
 
@@ -261,12 +262,14 @@ class read_Ariel_dataset():
         return df
 
 
-    def yeo_johnson_transform(self, from_baseline=True, dataframe=None, **kwargs):
+    def read_noisy_vstacked(self, from_baseline=True, dataframe=None, **kwargs):
         """
-        The Yeo-Johnson Transform: https://www.stat.umn.edu/arc/yjpower.pdf
-        To "normalize" a non-normal distribution (i.e. transform from non-Gaussian
-        to Gaussian distribution), for a mix of positive and negative numbers, 
-        (or strictly positive or strictly negative). 
+        Read file vstacked on each other instead of concatenating along the column. 
+        So for example, our file with timestep of 300 for 3 files, instead of returning
+        for one single wavelength shape of (1, 900) will return (3, 300) instead. 
+
+        This way we aggregate all one single wavelength onto one block and continue vstacking
+        downwards, keeping the rows = 300 constant. 
 
         :param from_baseline (bool): get data from data_augmentation_baseline
             directly or insert data yourself? Default to True. 
@@ -280,18 +283,84 @@ class read_Ariel_dataset():
         else:
             df = dataframe
 
-        pt = PowerTransformer(method="yeo-johnson")
+        new_df = pd.DataFrame()
+
+        for key, value in df.iterrows():
+
+            start_count_sectors = 0
+            end_count_sectors = n_timesteps
+
+            # To iterate for every 300 timesteps since this is from a single file. 
+            while end_count_sectors <= len(value):
+
+                data = np.array(value[start_count_sectors: end_count_sectors])
+
+                new_df = new_df.append(pd.DataFrame(data).T, ignore_index = True)
+
+                start_count_sectors = end_count_sectors
+                end_count_sectors += n_timesteps
+
+        return new_df
+
+
+
+    def yeo_johnson_transform(self, from_baseline=True, dataframe=None, original_frame=True, **kwargs):
+        """
+        The Yeo-Johnson Transform: https://www.stat.umn.edu/arc/yjpower.pdf
+        To "normalize" a non-normal distribution (i.e. transform from non-Gaussian
+        to Gaussian distribution), for a mix of positive and negative numbers, 
+        (or strictly positive or strictly negative). 
+
+        :param from_baseline (bool): get data from data_augmentation_baseline
+            directly or insert data yourself? Default to True. 
+        
+        :param dataframe (pandas.DataFrame): the data to be passed in. Only to be used
+            if from_baseline = False, otherwise default to None.
+
+        :param original_frame (bool): Whether to concatenate back to original shape of (x, 55). 
+            If not True, it will choose a shape of (300, y) instead for easy reading. 
+            Defaults to True. 
+        """
+        if from_baseline == True:
+            df = self.data_augmentation_baseline(**kwargs)
+
+        else:
+            df = dataframe
+
+        # pt = PowerTransformer(method="yeo-johnson")
 
         try:
             new_df = pd.DataFrame()
 
             for key, value in df.iterrows():
-                data = np.array(value)
-                data = data.reshape(-1, 1)
-                pt.fit(data)
-                transformed_data = pt.transform(data)
+                
+                temp_array = []
 
-                new_df.append(pd.DataFrame(transformed_data))
+                start_count_sectors = 0
+                end_count_sectors = n_timesteps
+
+                # To iterate for every 300 timesteps since this is from a single file. 
+                while end_count_sectors <= len(value):
+
+                    data = np.array(value[start_count_sectors: end_count_sectors])
+
+                    # # Manual method instead of using built-in library in scipy. 
+                    # data = data.reshape(-1, 1)
+                    # pt.fit(data)
+                    # transformed_data = pt.transform(data)
+
+                    transformed_data, _ = yeojohnson(data)
+
+                    if original_frame == True:
+                        temp_array += list(transformed_data)
+                    else:
+                        new_df = new_df.append(pd.DataFrame(transformed_data).T, ignore_index = True)
+
+                    start_count_sectors = end_count_sectors
+                    end_count_sectors += n_timesteps
+
+                if original_frame == True:
+                    new_df = new_df.append(pd.DataFrame(temp_array).T, ignore_index = True)
 
         except AttributeError as e:
             # 'Series' object has no attribute 'iterrows'
@@ -304,3 +373,10 @@ class read_Ariel_dataset():
             new_df = transformed_data
 
         return new_df
+
+
+    def flow_from_directory():
+        """
+        Flow directly from directory with batch size = 1. 
+        """
+        raise NotImplementedError("Yet to be implemented.")
