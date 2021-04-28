@@ -68,7 +68,7 @@ def test_github_only_example_data_noisy_test_correct_length():
 
 # Test private choose files
 def test_choose_train_or_test_correct_output_train(call_class):
-    path, files = call_class._choose_train_or_test(folder="noisy_train")
+    path, files = call_class._choose_train_or_test(folder="noisy_train", batch_size=3)
 
     assert path == "./Example_data/noisy_train"
 
@@ -76,9 +76,19 @@ def test_choose_train_or_test_correct_output_train(call_class):
 def test_choose_train_or_test_correct_output_train_files(call_class):
     # Assumed you have pass the test where only 3 files in the directory. 
 
-    path, files = call_class._choose_train_or_test(folder="noisy_train")
+    path, files = call_class._choose_train_or_test(folder="noisy_train", batch_size=3)
 
     assert len(files) == 3
+
+
+def test_len_noisy_list(call_class):
+    assert call_class._len_noisy_list() == 3
+
+
+def test_len_noisy_list_after_call_once_batch_size_one(call_class):
+    path, files = call_class._choose_train_or_test(folder="noisy_train", batch_size=1)
+
+    assert call_class._len_noisy_list() == 2
 
 
 def test_choose_train_or_test_correct_output_test(call_class):
@@ -90,7 +100,7 @@ def test_choose_train_or_test_correct_output_test(call_class):
 def test_choose_train_or_test_correct_output_test_files(call_class):
     # Assumed you have pass the test where only 3 files in the directory. 
 
-    path, files = call_class._choose_train_or_test(folder="noisy_test")
+    path, files = call_class._choose_train_or_test(folder="noisy_test", batch_size=3)
 
     assert len(files) == 3
 
@@ -102,7 +112,7 @@ def test_choose_train_or_test_correct_output_error(call_class):
 
 # Test noisy train file retrieval gets n_wavelengths rows x 900 columns
 def test_noisy_train_shape(call_class):
-    df = call_class.unoptimized_read_noisy(folder="noisy_train")
+    df = call_class.unoptimized_read_noisy(folder="noisy_train", batch_size=3)
 
     assert np.array(df).shape == (n_wavelengths, 900)
 
@@ -110,7 +120,7 @@ def test_noisy_train_shape(call_class):
 # Test names of columns have changed (i.e. for their existence.)
 # And they have the correct shape (no repeats)
 def test_noisy_column_names_changed_col_name_success(call_class):
-    df = call_class.unoptimized_read_noisy(folder="noisy_train")
+    df = call_class.unoptimized_read_noisy(folder="noisy_train", batch_size=3)
 
     assert df["0100_01_01_0"].shape == (n_wavelengths,)
     assert df["0052_01_01_50"].shape == (n_wavelengths,)
@@ -181,7 +191,7 @@ def test_read_params_extra_param_data(call_class):
 # To be changed when transformation changes. 
 @pytest.mark.slow
 def test_data_augmentation_baseline_replace_first_N_points(call_class):
-    df = call_class.data_augmentation_baseline(folder="noisy_train")
+    df = call_class.data_augmentation_baseline(folder="noisy_train", batch_size=3)
 
     items = ["0001_01_01", "0052_01_01", "0100_01_01"]
 
@@ -201,7 +211,7 @@ def test_data_augmentation_baseline_replace_first_N_points(call_class):
 # To be changed when transformation changes. 
 @pytest.mark.slow
 def test_data_augmentation_baseline_no_replace_other_points(call_class):
-    df = call_class.data_augmentation_baseline(folder="noisy_train")
+    df = call_class.data_augmentation_baseline(folder="noisy_train", batch_size=3)
 
     max_add = 0
     min_add = 0
@@ -219,7 +229,7 @@ def test_data_augmentation_baseline_no_replace_other_points(call_class):
 
 @pytest.mark.skip("No proper implementation for this.")
 def test_data_augmentation_baseline_mean_is_near_zero(call_class):
-    df = call_class.data_augmentation_baseline(folder="noisy_train")
+    df = call_class.data_augmentation_baseline(folder="noisy_train", batch_size=3)
 
     assert type(df.mean(1).min()) == np.float64
 
@@ -231,7 +241,7 @@ def test_data_augmentation_baseline_mean_is_near_zero(call_class):
 @pytest.mark.skip("No proper implementation for this. ")
 def test_data_augmentation_baseline_standard_deviation_near_one(call_class):
     # Here we assume mean is 0.00 if we passed the test above. 
-    df = call_class.data_augmentation_baseline(folder="noisy_train")
+    df = call_class.data_augmentation_baseline(folder="noisy_train", batch_size=3)
 
     assert df.std(1).max() > 1
     assert df.std(1).min() < 1
@@ -240,7 +250,7 @@ def test_data_augmentation_baseline_standard_deviation_near_one(call_class):
 # Yeo-Johnson transformation
 @pytest.mark.skip("We do not have a Gaussian Graph so even the transformation it doesn't work.")
 def test_yeo_johnson_transform_normal_dist_threshold_one_thousandths(call_class):
-    df = call_class.yeo_johnson_transform(folder="noisy_train")
+    df = call_class.yeo_johnson_transform(folder="noisy_train", batch_size=3)
     
     for key, data in df.iterrows():
         k2, p = normaltest(data)
@@ -250,7 +260,7 @@ def test_yeo_johnson_transform_normal_dist_threshold_one_thousandths(call_class)
 
 @pytest.mark.skip("We do not have a Gaussian Graph so even the transformation it doesn't work.")
 def test_without_yeo_johnson_transform_not_normal(call_class):
-    df = call_class.data_augmentation_baseline()
+    df = call_class.data_augmentation_baseline(batch_size=3)
     ptot = 0
 
     for key, data in df.iterrows():
@@ -262,8 +272,8 @@ def test_without_yeo_johnson_transform_not_normal(call_class):
 
 
 @pytest.mark.skip("We do not have a Gaussian Graph so even the transformation it doesn't work.")
-def test_yeo_johnson_transform_original_frame_not_true_pass_p_test(call_class):
-    df = call_class.yeo_johnson_transform(folder="noisy_train", original_frame=False)
+def test_yeo_johnson_transform_original_shape_not_true_pass_p_test(call_class):
+    df = call_class.yeo_johnson_transform(folder="noisy_train", original_shape=False, batch_size=3)
 
     for key, data in df.iterrows():
         k2, p = normaltest(data)
@@ -272,22 +282,22 @@ def test_yeo_johnson_transform_original_frame_not_true_pass_p_test(call_class):
 
 
 @pytest.mark.slow
-def test_yeo_johnson_transform_original_frame_not_true_correct_shape(call_class):
-    df = call_class.yeo_johnson_transform(folder="noisy_train", original_frame=False)
+def test_yeo_johnson_transform_original_shape_not_true_correct_shape(call_class):
+    df = call_class.yeo_johnson_transform(folder="noisy_train", original_shape=False, batch_size=3)
 
     assert df.shape == (165, 300)
 
 
 @pytest.mark.slow
-def test_yeo_johnson_transform_original_frame_true_correct_shape(call_class):
-    df = call_class.yeo_johnson_transform(folder="noisy_train")
+def test_yeo_johnson_transform_original_shape_true_correct_shape(call_class):
+    df = call_class.yeo_johnson_transform(folder="noisy_train", batch_size=3)
 
     assert df.shape == (55, 900)
 
 
 @pytest.mark.slow
 def test_yeo_johnson_transform_pass_in_alternative_df(call_class):
-    df = call_class.data_augmentation_baseline(folder="noisy_test")
+    df = call_class.data_augmentation_baseline(folder="noisy_test", batch_size=3)
 
     df = call_class.yeo_johnson_transform(from_baseline=False, dataframe=df)
 
@@ -296,14 +306,14 @@ def test_yeo_johnson_transform_pass_in_alternative_df(call_class):
 
 @pytest.mark.slow
 def test_read_noisy_vstacked_correct_shape(call_class):
-    df = call_class.read_noisy_vstacked(folder="noisy_train")
+    df = call_class.read_noisy_vstacked(folder="noisy_train", batch_size=3)
 
     assert df.shape == (165, 300)
 
 
 @pytest.mark.slow
 def test_read_noisy_vstacked_pass_in_alternative_df(call_class):
-    df = call_class.data_augmentation_baseline(folder="noisy_test")
+    df = call_class.data_augmentation_baseline(folder="noisy_test", batch_size=3)
 
     df = call_class.read_noisy_vstacked(from_baseline=False, dataframe=df)
 
