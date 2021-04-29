@@ -22,19 +22,15 @@ class read_Ariel_dataset():
     def __init__(self, noisy_path_train, noisy_path_test, params_path, start_read):
         """
         For reading Ariel Dataset. 
-
         :param noisy_path_train: (str) The *relative path's parent directory* from the current 
             working directory to all noisy training files. For local files start with "./", for 
             colab files alternatively start with "/content/" (and "./" works fine). 
-
         :param noisy_path_train: (str) The *relative path's parent directory* from the current 
             working directory to all noisy test files. For local files start with "./", for 
             colab files alternatively start with "/content/" (and "./" works fine). 
-
         :param params_path: (str) The *relative path's parent directory* from the current
             working directory to all params files. For local files start with "./", for 
             colab files alternatively start with "/content/" (and "./" works fine). 
-
         :param start_read: (int)  How many data points to replace at the beginning of the 
             file. Used for preprocessing of files by replacing values before start_read
             with 1.0 to minimize impact of the drop valley. 
@@ -60,13 +56,9 @@ class read_Ariel_dataset():
             path = self.noisy_path
             files = self.noisy_list[:batch_size]
 
-            del self.noisy_list[:batch_size]
-
         elif folder == "noisy_test":
             path = self.noisy_path_test
             files = self.noisy_list_test[:batch_size]
-
-            del self.noisy_list_test[:batch_size]
 
         else:
             raise FileNotFoundError("Not in the list (noisy_train, noisy_test). "
@@ -85,7 +77,6 @@ class read_Ariel_dataset():
         Read noisy files greedily, stacking them on the first axis. 
         First axis is the time series axis. So a file with 300x55, read 
         3 files would be 900x55. 
-
         :param folder (str): Which folder to do baseline transition. Choices: 
             "noisy_train" (default), "noisy_test". 
         """
@@ -241,10 +232,8 @@ class read_Ariel_dataset():
         """
         Data augmentation: What is being done to the data by the Baseline
             model done by the organizer. 
-
         :param folder (str): Which folder to do baseline transition. Choices: 
             "noisy_train" (default), "noisy_test". 
-
         :param extra_transform (str): Are there any other transformation you would like
             to make before going into final transform? Note: only restricted support. 
             Choose from "log", "sqrt" and "square". 
@@ -296,10 +285,8 @@ class read_Ariel_dataset():
         Read file vstacked on each other instead of concatenating along the column. 
         So for example, our file with timestep of 300 for 3 files, instead of returning
         for one single wavelength shape of (1, 900) will return (3, 300) instead. 
-
         This way we aggregate all one single wavelength onto one block and continue vstacking
         downwards, keeping the rows = 300 constant. 
-
         :param from_baseline (bool): get data from data_augmentation_baseline
             directly or insert data yourself? Default to True. 
         
@@ -339,13 +326,11 @@ class read_Ariel_dataset():
         To "normalize" a non-normal distribution (i.e. transform from non-Gaussian
         to Gaussian distribution), for a mix of positive and negative numbers, 
         (or strictly positive or strictly negative). 
-
         :param from_baseline (bool): get data from data_augmentation_baseline
             directly or insert data yourself? Default to True. 
         
         :param dataframe (pandas.DataFrame): the data to be passed in. Only to be used
             if from_baseline = False, otherwise default to None.
-
         :param original_shape (bool): Whether to concatenate back to original shape of (x, 55). 
             If not True, it will choose a shape of (300, y) instead for easy reading. 
             Defaults to True. 
