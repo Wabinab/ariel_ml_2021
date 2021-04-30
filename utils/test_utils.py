@@ -3,6 +3,7 @@ Unit tests for utils.py
 """
 import pytest 
 import os
+import shutil
 from scipy.stats import normaltest
 
 import warnings
@@ -318,3 +319,73 @@ def test_read_noisy_vstacked_pass_in_alternative_df(call_class):
     df = call_class.read_noisy_vstacked(from_baseline=False, dataframe=df)
 
     assert df.shape == (165, 300)
+
+
+def test_group_list_works_as_expected_with_optional_list(call_class):
+    mylist = ["0001_01_01", "0001_02_02", "0001_03_03", "0002_01_02", "0002_01_01", "0100_10_10"]
+
+    new_list = call_class._group_list(mylist)
+
+    assert new_list == [["0001_01_01", "0001_02_02", "0001_03_03"], ["0002_01_02", "0002_01_01"],
+                        ["0100_10_10"]]
+
+
+def test_group_list_works_as_expected_with_example_folder(call_class):
+    assert call_class._group_list_return() == [["0052_01_01.txt"], ["0001_01_01.txt"], ["0100_01_01.txt"]]
+
+
+def test_read_noisy_extra_params_train_test_invalid_raise_error(call_class):
+    with pytest.raises(ValueError):
+        call_class.read_noisy_extra_param(folder="should_raise_error")
+
+
+def test_read_noisy_extra_params_train_make_dir_successful(call_class):
+    dir = "./make_new_folder/"
+    call_class.read_noisy_extra_param(saveto=dir)
+
+    assert os.path.exists(dir) == True
+
+    shutil.rmtree(dir)
+
+
+def test_read_noisy_extra_params_test_contain_correct_item(call_class):
+    dir = "./make_new_folder/"
+    call_class.read_noisy_extra_param(folder="test", saveto=dir)
+
+    assert len(os.listdir(dir)) > 0
+    assert len(os.listdir(dir)) == 3
+
+    shutil.rmtree(dir)
+
+
+def test_read_noisy_extra_params_train_contain_correct_item(call_class):
+    dir = "./make_new_folder/"
+    call_class.read_noisy_extra_param(saveto=dir)
+
+    assert len(os.listdir(dir)) > 0
+    assert len(os.listdir(dir)) == 3
+
+    shutil.rmtree(dir)
+
+
+def test_read_params_extra_param_train_make_dir_successful(call_class):
+    dir = "./make_new_folder/"
+    call_class.read_params_extra_param(saveto=dir)
+
+    assert os.path.exists(dir) == True
+
+    shutil.rmtree(dir)
+
+
+def test_read_params_extra_param_train_ensure_folder_contain_correct_item(call_class):
+    dir = "./make_new_folder/"
+    call_class.read_params_extra_param(saveto=dir)
+
+    assert len(os.listdir(dir)) > 0
+    assert len(os.listdir(dir)) == 3
+
+    shutil.rmtree(dir)
+
+
+def test_stupid_method_of_teardown_because_of_laziness():
+    shutil.rmtree("./feature_store")
