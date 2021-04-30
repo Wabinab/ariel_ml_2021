@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 from sklearn.preprocessing import PowerTransformer
 from scipy.stats import yeojohnson
+from tqdm import tqdm
 
 import tensorflow as tf
 
@@ -22,19 +23,15 @@ class read_Ariel_dataset():
     def __init__(self, noisy_path_train, noisy_path_test, params_path, start_read):
         """
         For reading Ariel Dataset. 
-
         :param noisy_path_train: (str) The *relative path's parent directory* from the current 
             working directory to all noisy training files. For local files start with "./", for 
             colab files alternatively start with "/content/" (and "./" works fine). 
-
         :param noisy_path_train: (str) The *relative path's parent directory* from the current 
             working directory to all noisy test files. For local files start with "./", for 
             colab files alternatively start with "/content/" (and "./" works fine). 
-
         :param params_path: (str) The *relative path's parent directory* from the current
             working directory to all params files. For local files start with "./", for 
             colab files alternatively start with "/content/" (and "./" works fine). 
-
         :param start_read: (int)  How many data points to replace at the beginning of the 
             file. Used for preprocessing of files by replacing values before start_read
             with 1.0 to minimize impact of the drop valley. 
@@ -53,33 +50,39 @@ class read_Ariel_dataset():
         self.params_list = os.listdir(self.params_path)
 
 
-    def _choose_train_or_test(self, folder="noisy_train"):
+    def _choose_train_or_test(self, folder="noisy_train", batch_size=1):
         """Private function to choose train or test"""
 
         if folder == "noisy_train":
             path = self.noisy_path
-            files = self.noisy_list
+            files = self.noisy_list[:batch_size]
+
         elif folder == "noisy_test":
             path = self.noisy_path_test
-            files = self.noisy_list_test
+            files = self.noisy_list_test[:batch_size]
+
         else:
             raise FileNotFoundError("Not in the list (noisy_train, noisy_test). "
                 "Please input the choices in the list stated and try again.")
 
+
         return path, files
 
 
-    def unoptimized_read_noisy(self, folder="noisy_train"):
+    def _len_noisy_list(self):
+        return len(self.noisy_list)
+
+
+    def unoptimized_read_noisy(self, folder="noisy_train", **kwargs):
         """
         Read noisy files greedily, stacking them on the first axis. 
         First axis is the time series axis. So a file with 300x55, read 
         3 files would be 900x55. 
-
         :param folder (str): Which folder to do baseline transition. Choices: 
             "noisy_train" (default), "noisy_test". 
         """
 
-        path, files = self._choose_train_or_test(folder=folder)
+        path, files = self._choose_train_or_test(folder=folder, **kwargs)
 
         predefined = pd.DataFrame()
 
@@ -130,11 +133,9 @@ class read_Ariel_dataset():
 
         counter = 0
 
-        for item in self.noisy_list:
+        for item in tqdm(self.noisy_list):
             temp_storage_float = []
             relative_file_path = self.noisy_path + "/" + item
-
-            print(relative_file_path)
 
             with open(relative_file_path, "r") as f:
                 temp_storage_str = list(itertools.islice(f, 6))
@@ -183,11 +184,9 @@ class read_Ariel_dataset():
 
         counter = 0
 
-        for item in self.params_list:
+        for item in tqdm(self.params_list):
             temp_storage_float = []
             relative_file_path = self.params_path + "/" + item
-
-            print(relative_file_path)
 
             with open(relative_file_path, "r") as f:
                 temp_storage_str = list(itertools.islice(f, 2))
@@ -226,18 +225,20 @@ class read_Ariel_dataset():
         return predefined
     
 
-    def data_augmentation_baseline(self, folder="noisy_train"):
+    def data_augmentation_baseline(self, folder="noisy_train", extra_transform=None, **kwargs):
         """
         Data augmentation: What is being done to the data by the Baseline
             model done by the organizer. 
-
         :param folder (str): Which folder to do baseline transition. Choices: 
             "noisy_train" (default), "noisy_test". 
+        :param extra_transform (str): Are there any other transformation you would like
+            to make before going into final transform? Note: only restricted support. 
+            Choose from "log", "sqrt" and "square". 
         """
         # Read file
-        df = self.unoptimized_read_noisy(folder=folder)
+        df = self.unoptimized_read_noisy(folder=folder, **kwargs)
 
-        path, files = self._choose_train_or_test(folder=folder)
+        path, files = self._choose_train_or_test(folder=folder, **kwargs)
 
         # Transformation 1: First 30 points of each light curve are replaced
         # by 1 to reduce the impact from the ramps.
@@ -250,6 +251,20 @@ class read_Ariel_dataset():
                 for j in range(n_wavelengths):
 
                     df[str(label_name) + "_" + str(i)][j] = 1
+
+
+        # Extra transformation outside of what is being done in baseline. 
+        # Tests yet to be implemented. 
+        for i in range(n_wavelengths):
+            
+            if extra_transform == "log":
+                df.iloc[i] = np.log(df.iloc[i])
+
+            elif extra_transform == "sqrt":
+                df.iloc[i] = np.sqrt(df.iloc[i])
+
+            elif extra_transform == "square":
+                df.iloc[i] = np.square(df.iloc[i])
 
 
         # Transformation 2: -1 to all data points in the file. 
@@ -267,10 +282,8 @@ class read_Ariel_dataset():
         Read file vstacked on each other instead of concatenating along the column. 
         So for example, our file with timestep of 300 for 3 files, instead of returning
         for one single wavelength shape of (1, 900) will return (3, 300) instead. 
-
         This way we aggregate all one single wavelength onto one block and continue vstacking
         downwards, keeping the rows = 300 constant. 
-
         :param from_baseline (bool): get data from data_augmentation_baseline
             directly or insert data yourself? Default to True. 
         
@@ -278,7 +291,7 @@ class read_Ariel_dataset():
             if from_baseline = False, otherwise default to None.
         """
         if from_baseline == True:
-            df = self.data_augmentation_baseline(**kwargs)
+            df = self.unoptimized_read_noisy(**kwargs)
 
         else:
             df = dataframe
@@ -304,20 +317,18 @@ class read_Ariel_dataset():
 
 
 
-    def yeo_johnson_transform(self, from_baseline=True, dataframe=None, original_frame=True, **kwargs):
+    def yeo_johnson_transform(self, from_baseline=True, dataframe=None, original_shape=True, **kwargs):
         """
         The Yeo-Johnson Transform: https://www.stat.umn.edu/arc/yjpower.pdf
         To "normalize" a non-normal distribution (i.e. transform from non-Gaussian
         to Gaussian distribution), for a mix of positive and negative numbers, 
         (or strictly positive or strictly negative). 
-
         :param from_baseline (bool): get data from data_augmentation_baseline
             directly or insert data yourself? Default to True. 
         
         :param dataframe (pandas.DataFrame): the data to be passed in. Only to be used
             if from_baseline = False, otherwise default to None.
-
-        :param original_frame (bool): Whether to concatenate back to original shape of (x, 55). 
+        :param original_shape (bool): Whether to concatenate back to original shape of (x, 55). 
             If not True, it will choose a shape of (300, y) instead for easy reading. 
             Defaults to True. 
         """
@@ -351,7 +362,7 @@ class read_Ariel_dataset():
 
                     transformed_data, _ = yeojohnson(data)
 
-                    if original_frame == True:
+                    if original_shape == True:
                         temp_array += list(transformed_data)
                     else:
                         new_df = new_df.append(pd.DataFrame(transformed_data).T, ignore_index = True)
@@ -359,7 +370,7 @@ class read_Ariel_dataset():
                     start_count_sectors = end_count_sectors
                     end_count_sectors += n_timesteps
 
-                if original_frame == True:
+                if original_shape == True:
                     new_df = new_df.append(pd.DataFrame(temp_array).T, ignore_index = True)
 
         except AttributeError as e:

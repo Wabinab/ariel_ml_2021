@@ -6,4 +6,4 @@ ipywidgets
 pytest
 scipy
 scikit-learn
-
+tqdm
