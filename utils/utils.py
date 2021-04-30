@@ -49,17 +49,34 @@ class read_Ariel_dataset():
         self.noisy_list_test = os.listdir(self.noisy_path_test)
         self.params_list = os.listdir(self.params_path)
 
+        # Grouped by AAAA: 
+        self.group_noisy_list = self._group_list(self.noisy_list)
+        self.group_noisy_list_test = self._group_list(self.noisy_list_test)
+        self.group_params_list = self._group_list(self.params_path)
+
+
+    def _group_list_return(self):
+        """
+        Only used for unit test purposes. 
+
+        Return self.group_noisy_list and assert it is true. 
+        """
+        return self.group_noisy_list
+
 
     def _choose_train_or_test(self, folder="noisy_train", batch_size=1):
-        """Private function to choose train or test"""
+        """Private function to choose train or test. 
+        
+        :param batch_size (int): The batch size to take. NotImplemented yet. 
+        """
 
         if folder == "noisy_train":
             path = self.noisy_path
-            files = self.noisy_list[:batch_size]
+            files = self.noisy_list
 
         elif folder == "noisy_test":
             path = self.noisy_path_test
-            files = self.noisy_list_test[:batch_size]
+            files = self.noisy_list_test
 
         else:
             raise FileNotFoundError("Not in the list (noisy_train, noisy_test). "
@@ -123,58 +140,104 @@ class read_Ariel_dataset():
         return predefined
 
 
-    def read_noisy_extra_param(self):
+    def _group_list(self, mylist):
+        """
+        Group list together. Here the function is specific to group AAAA together into 
+        a sublist to not cramp the memory and dataframe I/O.
+        """
+        return [list(v) for i, v in itertools.groupby(mylist, lambda x: x[:4])]
+
+
+    def read_noisy_extra_param(self, folder="train", saveto="./feature_store/noisy_train"):
         """
         Read the extra 6 stellar and planet parameters in noisy files. 
+
+        :param folder (str): "train" or "test" choice. Default "train" for noisy train set. 
+        :param saveto (str): The directory to save to. Will make the directory if not 
+            already exists.
         """
         header = ["star_temp", "star_logg", "star_rad", "star_mass", "star_k_mag", "period"]
         
         predefined = pd.DataFrame()
 
-        counter = 0
+        # if saveto[-1] != "/":
+        #     saveto += "/"
 
-        for item in tqdm(self.noisy_list):
-            temp_storage_float = []
-            relative_file_path = self.noisy_path + "/" + item
+        try:
+            os.makedirs(saveto)
+        except OSError as e:
+            pass
 
-            with open(relative_file_path, "r") as f:
-                temp_storage_str = list(itertools.islice(f, 6))
+        if folder == "train":
+            mylist = self.group_noisy_list
+        elif folder == "test":
+            mylist = self.group_noisy_list_test
+        else: 
+            raise ValueError("Invalid 'folder' entry. Please choose between 'train' or 'test'.")
 
-            # Preprocess for numbers only
-            for string in temp_storage_str:
-                # Separate the digits and the non-digits.
-                new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
+        # To ensure small enough, read them into groups of csv first. 
+        for grouped_item in tqdm(self.group_noisy_list):
 
-                # Only new_str[0] is the one we want to omit.
-                # We want to join back into a single string because "." previously is classifed
-                # as non-digit. 
-                new_str = "".join(new_str[1:])  
+            for item in grouped_item:
+                temp_storage_float = []
+                relative_file_path = self.noisy_path + "/" + item
 
-                # Convert to float. 
-                temp_storage_float.append(float(new_str))
+                with open(relative_file_path, "r") as f:
+                    temp_storage_str = list(itertools.islice(f, 6))
 
-            # Convert to pandas DataFrame. 
-            temp_storage_float = pd.DataFrame(temp_storage_float)
+                # Preprocess for numbers only
+                for string in temp_storage_str:
+                    # Separate the digits and the non-digits.
+                    new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
 
-            # Define file name
-            names = [item[-14:-4]]
+                    # Only new_str[0] is the one we want to omit.
+                    # We want to join back into a single string because "." previously is classifed
+                    # as non-digit. 
+                    new_str = "".join(new_str[1:])  
 
-            # Change the column name
-            temp_storage_float.rename(columns = 
-                {x: y for x, y in zip(temp_storage_float.columns, names)}, 
-                inplace=True
-            )
+                    # Convert to float. 
+                    temp_storage_float.append(float(new_str))
 
-            # Change the row names for predefined (optional for readability)
-            temp_storage_float.rename(index = {x: y for x, y in zip(range(6), header)},
-                                    inplace=True)
+                # Convert to pandas DataFrame. 
+                temp_storage_float = pd.DataFrame(temp_storage_float)
 
-            predefined = pd.concat([predefined, temp_storage_float], axis=1)
+                # Define file name
+                names = [item[-14:-4]]
+
+                # Change the column name
+                temp_storage_float.rename(columns = 
+                    {x: y for x, y in zip(temp_storage_float.columns, names)}, 
+                    inplace=True
+                )
+
+                # Change the row names for predefined (optional for readability)
+                temp_storage_float.rename(index = {x: y for x, y in zip(range(6), header)},
+                                        inplace=True)
+
+                predefined = pd.concat([predefined, temp_storage_float], axis=1)
+
+            predefined.to_csv(saveto + item[:4] + ".csv")
+            
+            # Reset predefined
+            predefined = pd.DataFrame()
+
+        # Then concatenate the csv files. 
+        saved_list = os.listdir(saveto)
+        predefined = pd.DataFrame()
+
+        for item in saved_list:
+            relative_file_path = saveto + item
+
+            name = [item[:-4]]  # ignore the .csv at the end. 
+
+            temp_df = pd.read_csv(relative_file_path, index_col=0)
+
+            predefined = pd.concat([predefined, temp_df], axis=1)
 
         return predefined
 
 
-    def read_params_extra_param(self):
+    def read_params_extra_param(self, saveto="./feature_store/params_train"):
         """
         Read the extra 2 intermediate target params in the params files. 
         """
@@ -182,45 +245,73 @@ class read_Ariel_dataset():
         
         predefined = pd.DataFrame()
 
-        counter = 0
+        # if saveto[-1] != "/":
+        #     saveto += "/"
 
-        for item in tqdm(self.params_list):
-            temp_storage_float = []
-            relative_file_path = self.params_path + "/" + item
+        try:
+            os.makedirs(saveto)
+        except OSError as e:
+            pass
 
-            with open(relative_file_path, "r") as f:
-                temp_storage_str = list(itertools.islice(f, 2))
+        mylist = self.group_params_list  # Since we only have one folder, so hardcoded here. 
+       
+        for grouped_item in tqdm(mylist):
 
-            # Preprocess for numbers only
-            for string in temp_storage_str:
-                # Separate the digits and the non-digits.
-                new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
+            for item in grouped_item:
+                temp_storage_float = []
+                relative_file_path = self.params_path + "/" + item
 
-                # Only new_str[0] is the one we want to omit.
-                # We want to join back into a single string because "." previously is classifed
-                # as non-digit. 
-                new_str = "".join(new_str[1:])  
+                with open(relative_file_path, "r") as f:
+                    temp_storage_str = list(itertools.islice(f, 2))
 
-                # Convert to float. 
-                temp_storage_float.append(float(new_str))
+                # Preprocess for numbers only
+                for string in temp_storage_str:
+                    # Separate the digits and the non-digits.
+                    new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
 
-            # Convert to pandas DataFrame. 
-            temp_storage_float = pd.DataFrame(temp_storage_float)
+                    # Only new_str[0] is the one we want to omit.
+                    # We want to join back into a single string because "." previously is classifed
+                    # as non-digit. 
+                    new_str = "".join(new_str[1:])  
 
-            # Define file name
-            names = [item[-14:-4]]
+                    # Convert to float. 
+                    temp_storage_float.append(float(new_str))
 
-            # Change the column name
-            temp_storage_float.rename(columns = 
-                {x: y for x, y in zip(temp_storage_float.columns, names)}, 
-                inplace=True
-            )
+                # Convert to pandas DataFrame. 
+                temp_storage_float = pd.DataFrame(temp_storage_float)
 
-            # Change the row names for predefined (optional for readability)
-            temp_storage_float.rename(index = {x: y for x, y in zip(range(6), header)},
-                                    inplace=True)
+                # Define file name
+                names = [item[-14:-4]]
 
-            predefined = pd.concat([predefined, temp_storage_float], axis=1)
+                # Change the column name
+                temp_storage_float.rename(columns = 
+                    {x: y for x, y in zip(temp_storage_float.columns, names)}, 
+                    inplace=True
+                )
+
+                # Change the row names for predefined (optional for readability)
+                temp_storage_float.rename(index = {x: y for x, y in zip(range(6), header)},
+                                        inplace=True)
+
+                predefined = pd.concat([predefined, temp_storage_float], axis=1)
+
+            predefined.to_csv(saveto + item[:4] + ".csv")
+
+            # Reset predefined
+            predefined = pd.DataFrame()
+
+        # Then concatenate the csv files. 
+        saved_list = os.listdir(saveto)
+        predefined = pd.DataFrame()
+
+        for item in saved_list:
+            relative_file_path = saveto + item
+
+            name = [item[:-4]]  # ignore the .csv at the end. 
+
+            temp_df = pd.read_csv(relative_file_path, index_col=0)
+
+            predefined = pd.concat([predefined, temp_df], axis=1)
 
         return predefined
     
