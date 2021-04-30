@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 from sklearn.preprocessing import PowerTransformer
 from scipy.stats import yeojohnson
+from tqdm import tqdm
 
 import tensorflow as tf
 
@@ -132,11 +133,9 @@ class read_Ariel_dataset():
 
         counter = 0
 
-        for item in self.noisy_list:
+        for item in tqdm(self.noisy_list):
             temp_storage_float = []
             relative_file_path = self.noisy_path + "/" + item
-
-            print(relative_file_path)
 
             with open(relative_file_path, "r") as f:
                 temp_storage_str = list(itertools.islice(f, 6))
@@ -185,11 +184,9 @@ class read_Ariel_dataset():
 
         counter = 0
 
-        for item in self.params_list:
+        for item in tqdm(self.params_list):
             temp_storage_float = []
             relative_file_path = self.params_path + "/" + item
-
-            print(relative_file_path)
 
             with open(relative_file_path, "r") as f:
                 temp_storage_str = list(itertools.islice(f, 2))

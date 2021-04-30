@@ -51,11 +51,10 @@ def test_all_extra_params_train_is_the_same(call_class):
 
     # We know there are 100 permutations of BB and CC altogether. (10 BB x 10 CC)
     # So we are going to hard code. 
-    df_grouped = df.filter(like='_').groupby(lambda x: x.split('_')[0], axis=1).sum()
-    df_grouped /= 100
+    df_grouped = df.filter(like='_').groupby(lambda x: x.split('_')[0], axis=1).mean()
 
     for AAAA in df_grouped.keys():
-        assert False not in np.where(df_grouped[AAAA] == df[AAAA + "_01_01"], True, False)
+        assert False not in np.where(df_grouped[AAAA] == pytest.approx(df[AAAA + "_01_01"], 0.1), True, False)
 
     # Save to feature store if test passes.
     df_grouped.to_csv("./data/feature_store/noisy_extra_param.csv")
@@ -67,11 +66,10 @@ def test_all_extra_params_params_train_is_the_same(call_class):
 
     # We know there are 100 permutations of BB and CC altogether. (10 BB x 10 CC)
     # So we are going to hard code. 
-    df_grouped = df.filter(like='_').groupby(lambda x: x.split('_')[0], axis=1).sum()
-    df_grouped /= 100
+    df_grouped = df.filter(like='_').groupby(lambda x: x.split('_')[0], axis=1).mean()
 
     for AAAA in df_grouped.keys():
-        assert False not in np.where(df_grouped[AAAA] == df[AAAA + "_01_01"], True, False)
+        assert False not in np.where(df_grouped[AAAA] == pytest.approx(df[AAAA + "_01_01"]), True, False)
 
     # Save to feature store if test passes.
     df_grouped.to_csv("./data/feature_store/params_extra_param.csv")
