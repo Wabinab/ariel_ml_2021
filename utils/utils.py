@@ -52,7 +52,7 @@ class read_Ariel_dataset():
         # Grouped by AAAA: 
         self.group_noisy_list = self._group_list(self.noisy_list)
         self.group_noisy_list_test = self._group_list(self.noisy_list_test)
-        self.group_params_list = self._group_list(self.params_path)
+        self.group_params_list = self._group_list(self.params_list)
 
 
     def _group_list_return(self):
@@ -160,8 +160,8 @@ class read_Ariel_dataset():
         
         predefined = pd.DataFrame()
 
-        # if saveto[-1] != "/":
-        #     saveto += "/"
+        if saveto[-1] != "/":
+            saveto += "/"
 
         try:
             os.makedirs(saveto)
@@ -245,8 +245,8 @@ class read_Ariel_dataset():
         
         predefined = pd.DataFrame()
 
-        # if saveto[-1] != "/":
-        #     saveto += "/"
+        if saveto[-1] != "/":
+            saveto += "/"
 
         try:
             os.makedirs(saveto)
@@ -303,6 +303,8 @@ class read_Ariel_dataset():
         # Then concatenate the csv files. 
         saved_list = os.listdir(saveto)
         predefined = pd.DataFrame()
+
+        print(saved_list)
 
         for item in saved_list:
             relative_file_path = saveto + item

@@ -346,10 +346,9 @@ def test_read_noisy_extra_params_train_make_dir_successful(call_class):
     assert os.path.exists(dir) == True
 
     shutil.rmtree(dir)
-    os.rmdir(dir)
 
 
-def test_read_noisy_extra_params_test_ensure_folder_contain_correct_item(call_class):
+def test_read_noisy_extra_params_test_contain_correct_item(call_class):
     dir = "./make_new_folder/"
     call_class.read_noisy_extra_param(folder="test", saveto=dir)
 
@@ -357,10 +356,9 @@ def test_read_noisy_extra_params_test_ensure_folder_contain_correct_item(call_cl
     assert len(os.listdir(dir)) == 3
 
     shutil.rmtree(dir)
-    os.rmdir(dir)
 
 
-def test_read_noisy_extra_param_train_ensure_folder_contain_correct_item(call_class):
+def test_read_noisy_extra_params_train_contain_correct_item(call_class):
     dir = "./make_new_folder/"
     call_class.read_noisy_extra_param(saveto=dir)
 
@@ -368,7 +366,6 @@ def test_read_noisy_extra_param_train_ensure_folder_contain_correct_item(call_cl
     assert len(os.listdir(dir)) == 3
 
     shutil.rmtree(dir)
-    os.rmdir(dir)
 
 
 def test_read_params_extra_param_train_make_dir_successful(call_class):
@@ -388,3 +385,7 @@ def test_read_params_extra_param_train_ensure_folder_contain_correct_item(call_c
     assert len(os.listdir(dir)) == 3
 
     shutil.rmtree(dir)
+
+
+def test_stupid_method_of_teardown_because_of_laziness():
+    shutil.rmtree("./feature_store")
