@@ -85,10 +85,10 @@ def test_len_noisy_list(call_class):
     assert call_class._len_noisy_list() == 3
 
 
-def test_len_noisy_list_after_call_once_batch_size_one(call_class):
+def test_len_noisy_list_after_call_once_batch_size_one_do_not_delte_original(call_class):
     path, files = call_class._choose_train_or_test(folder="noisy_train", batch_size=1)
 
-    assert call_class._len_noisy_list() == 2
+    assert call_class._len_noisy_list() == 3
 
 
 def test_choose_train_or_test_correct_output_test(call_class):
