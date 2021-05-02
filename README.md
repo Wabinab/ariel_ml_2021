@@ -5,6 +5,7 @@ Note the following have been summarized from the above website. All credits goes
 
 [![Run Python Tests](https://github.com/Wabinab/ariel_ml_2021/actions/workflows/pytest.yaml/badge.svg?branch=dev)](https://github.com/Wabinab/ariel_ml_2021/actions/workflows/pytest.yaml)
 
+
 % ---------------------------------------------------------
 ## Initial thoughts (For Rachel): 
 For the data:
