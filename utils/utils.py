@@ -169,18 +169,20 @@ class read_Ariel_dataset():
             pass
 
         if folder == "train":
+            path = self.noisy_path
             mylist = self.group_noisy_list
         elif folder == "test":
+            path = self.noisy_path_test
             mylist = self.group_noisy_list_test
         else: 
             raise ValueError("Invalid 'folder' entry. Please choose between 'train' or 'test'.")
 
         # To ensure small enough, read them into groups of csv first. 
-        for grouped_item in tqdm(self.group_noisy_list):
+        for grouped_item in tqdm(mylist):
 
             for item in grouped_item:
                 temp_storage_float = []
-                relative_file_path = self.noisy_path + "/" + item
+                relative_file_path = path + "/" + item
 
                 with open(relative_file_path, "r") as f:
                     temp_storage_str = list(itertools.islice(f, 6))
