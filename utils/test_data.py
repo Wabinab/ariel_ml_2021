@@ -4,7 +4,7 @@ Created on: 29 Avril 2021.
 """
 import pytest
 import os
-import pandas as pd
+import modin.pandas as pd
 from scipy.stats import normaltest
 
 import warnings

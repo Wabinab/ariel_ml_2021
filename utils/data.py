@@ -5,12 +5,16 @@ Created on: 28 Avril 2021.
 import matplotlib.pyplot as plt
 import numpy as np
 import os 
-import pandas as pd 
+import modin.pandas as pd 
 from pathlib import Path
 from utils import read_Ariel_dataset
 
 import warnings
 warnings.simplefilter("ignore")
+
+from distributed import Client
+
+client = Client()
 
 
 class Transform_Data(read_Ariel_dataset):

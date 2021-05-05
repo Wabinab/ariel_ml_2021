@@ -2,7 +2,7 @@ import copy
 import itertools
 import os
 import numpy as np
-import pandas as pd
+import modin.pandas as pd
 from pathlib import Path
 from sklearn.preprocessing import PowerTransformer
 from scipy.stats import yeojohnson
@@ -12,6 +12,10 @@ import tensorflow as tf
 
 import warnings
 warnings.simplefilter("ignore")
+
+from distributed import Client
+
+client = Client()
 
 
 n_wavelengths = 55

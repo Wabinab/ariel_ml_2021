@@ -1,9 +1,9 @@
 tensorflow
 numpy
 matplotlib
-pandas
 ipywidgets
 pytest
 scipy
 scikit-learn
 tqdm
+modin[dask]
