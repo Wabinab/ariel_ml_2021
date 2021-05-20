@@ -331,8 +331,14 @@ def test_group_list_works_as_expected_with_optional_list(call_class):
 
 
 def test_group_list_works_as_expected_with_example_folder(call_class):
-    assert call_class._group_list_return() == [["0052_01_01.txt"], ["0001_01_01.txt"], ["0100_01_01.txt"]]
+    our_function_return = call_class._group_list_return()
+    our_expected = [["0052_01_01.txt"], ["0001_01_01.txt"], ["0100_01_01.txt"]]
 
+    # First assert no duplicate or the below assert will be invalid. 
+    assert len({(frozenset(item)) for item in our_function_return}) == len({(frozenset(item)) for item in our_expected})
+
+    # Then assert the contents. 
+    assert {(frozenset(item)) for item in our_function_return} == {(frozenset(item)) for item in our_expected}
 
 def test_read_noisy_extra_params_train_test_invalid_raise_error(call_class):
     with pytest.raises(ValueError):
