@@ -21,5 +21,5 @@ def test_parse_arguments_work_correctly():
 def test_parse_arguments_default_work_correctly():
     parsed = parse_arguments([])
 
-    assert parsed.num_process == 4
+    assert parsed.num_process == os.cpu_count()
     assert parsed.save_folder == "./csv_files/"
