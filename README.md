@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ariel_ml_2021
 Ariel ML Data Challenges 2021 available here: https://www.ariel-datachallenge.space/ML/documentation/description. The challenge is held by ECML-PKDD with other acknowledgements present on the website (link above). 
 
@@ -40,3 +41,4 @@ sma = semimajor axis
 incl: inclination
 
 Scoring system (to be included due to giant latex lazy to type and lazy to use MathPix). 
+>>>>>>> main

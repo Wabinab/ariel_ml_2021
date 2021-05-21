@@ -1,4 +1,3 @@
-<<<<<<< HEAD:utils/txt_to_csv_noisy.py
 """
 File to read noisy data and params data (excluding extra parameters)
 into csv files. 
@@ -22,11 +21,6 @@ from multiprocessing import Pool, Process
 
 # files = list(files)
 
-# Local file reading from Example data
-noisy_path = "../Example_data/noisy_train"
-params_path = "../Example_data/params_train"
-noisy_test_path = "../Example_data/noisy_test"
-
 # useful def
 def return_filename_split(file):
     return [file[0:4], file[5:7], file[8:10]]
@@ -34,43 +28,53 @@ def return_filename_split(file):
 def parse_arguments(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_process", type=int, help="number of processes", default=os.cpu_count())
-    parser.add_argument("--save_folder", type=str, help="the save location", default="./csv_test_files/")
+    parser.add_argument("--save_folder", type=str, help="the save location", default="./csv_files/")
     parser.add_argument("--noisy_path", type=str, help="noisy train files location", default="./data/training_set/noisy_train/")
     parser.add_argument("--params_path", type=str, help="noisy params train files location", default="./data/training_set/params_train/")
     parser.add_argument("--noisy_test_path", type=str, help="noisy test files location", default="./data/test_set/noisy_test/")
 
     return parser.parse_args(args)
 
-# Adapting for test files now
-def think_of_name_later(noisy_files):
+
+# Focusing on training files only. 
+def training_files_to_csv(noisy_files, **kwargs):
     """
     What it does is described at the top of this file. 
     
     :param save_folder: the folder in which the output csv files are to be saved. 
     """
     global noisy_path, params_path, noisy_test_path, save_folder, header
+    if kwargs:
+        noisy_path = kwargs["noisy_path"]
+        params_path = kwargs["params_path"]
+        noisy_test_path = kwargs["noisy_test_path"]
+        save_folder = kwargs["save_folder"]
+        header = kwargs["header"]
 
     # Read concurrent training and testing files into 2 different dataframe. 
     # header = True
     for file in tqdm(noisy_files):
-        df_noisy = np.loadtxt(noisy_test_path + "/" + file)
+        df_noisy = np.loadtxt(noisy_path + "/" + file)
         df_noisy = pd.DataFrame(df_noisy)
 
         assert df_noisy.shape == (55, 300)
 
         df_noisy.columns = df_noisy.columns.astype(str)
         
-        #test set has no training params, don't need this bit:
-        #df_params = np.loadtxt(params_path + "/" + file)
-        #df_params = pd.DataFrame(df_params)
-        #assert df_params.shape == (55, 1)
-        # Rename column into "label"
-        #df_params.rename(columns={x: y for x, y in zip(df_params.columns, ["label"])}, inplace=True)
-        # Join them into the desired shape. 
-        #df_joined = pd.concat([df_noisy, df_params], axis=1)
-        #assert df_joined.shape == (55, 301)        #should still be (55,300)
+        df_params = np.loadtxt(params_path + "/" + file)
+        df_params = pd.DataFrame(df_params)
 
-        df_noisy = df_noisy.transpose()
+        assert df_params.shape == (55, 1)
+
+        # Rename column into "label"
+        df_params.rename(columns={x: y for x, y in zip(df_params.columns, ["label"])}, inplace=True)
+
+        # Join them into the desired shape. 
+        df_joined = pd.concat([df_noisy, df_params], axis=1)
+
+        assert df_joined.shape == (55, 301)
+
+        df_joined = df_joined.transpose()
 
         # Include "primary key field" but split into 3 columns, AAAA, BB and CC. 
         df_primary_key = pd.DataFrame(return_filename_split(file)).transpose()
@@ -86,15 +90,15 @@ def think_of_name_later(noisy_files):
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
         
-        for column in df_noisy.columns:
-            df_temp = pd.DataFrame(df_noisy[column]).T
+        for column in df_joined.columns:
+            df_temp = pd.DataFrame(df_joined[column]).T
 
             # Drop index so concatenation happens in the correct index. 
             # Reason is because ignore_index kwargs on pd.concat does not seems to work. 
             df_temp.reset_index(drop=True, inplace=True)
 
             df_temp = pd.concat([df_primary_key, df_temp], axis=1)
-            assert df_temp.shape == (1, 303)   #probably
+            assert df_temp.shape == (1, 304)
 
             df_temp.to_csv(save_folder + f"train_table_{column}.csv", mode="a", header=header, index=False)
 
@@ -108,15 +112,18 @@ if __name__ == "__main__":
 
     save_folder = arguments.save_folder
     num_process = arguments.num_process
+    noisy_path = arguments.noisy_path
+    params_path = arguments.params_path
+    noisy_test_path = arguments.noisy_test_path
 
-    noisy_files = os.listdir(noisy_test_path)
+    noisy_files = os.listdir(noisy_path)
 
     # Pop the first data to create the first row first. 
     first_file = noisy_files.pop(0)
     first_file = [first_file]
 
     header = True
-    think_of_name_later(first_file)
+    training_files_to_csv(first_file)
 
     header = False
 
@@ -125,8 +132,7 @@ if __name__ == "__main__":
 
     with Pool(processes=num_process) as pool:
 
-        pool.map(think_of_name_later, noisy_files)
+        pool.map(training_files_to_csv, noisy_files)
 
-        # think_of_name_later(noisy_path, params_path, noisy_test_path,  \
+        # training_files_to_csv(noisy_path, params_path, noisy_test_path,  \
         #     noisy_files, save_folder="./csv_files/")
->>>>>>> main:utils/txt_to_csv_noisy_test.py
