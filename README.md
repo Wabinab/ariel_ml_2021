@@ -1,9 +1,10 @@
+<<<<<<< HEAD
 # ariel_ml_2021
 Ariel ML Data Challenges 2021 available here: https://www.ariel-datachallenge.space/ML/documentation/description. The challenge is held by ECML-PKDD with other acknowledgements present on the website (link above). 
 
 Note the following have been summarized from the above website. All credits goes to the website and their creators. This page intents to preserve information of the website after the webpage is down in the future. 
 
-[![Run Python Tests](https://github.com/Wabinab/ariel_ml_2021/actions/workflows/pytest.yaml/badge.svg?branch=dev)](https://github.com/Wabinab/ariel_ml_2021/actions/workflows/pytest.yaml)
+[![Run Python Tests](https://github.com/Wabinab/ariel_ml_2021/actions/workflows/pytest.yaml/badge.svg?branch=main)](https://github.com/Wabinab/ariel_ml_2021/actions/workflows/pytest.yaml)
 
 
 % ---------------------------------------------------------
@@ -40,3 +41,4 @@ sma = semimajor axis
 incl: inclination
 
 Scoring system (to be included due to giant latex lazy to type and lazy to use MathPix). 
+>>>>>>> main
