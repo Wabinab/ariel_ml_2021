@@ -1,4 +1,3 @@
-<<<<<<< HEAD:utils/txt_to_csv_noisy.py
 """
 File to read noisy data and params data (excluding extra parameters)
 into csv files. 
@@ -129,4 +128,3 @@ if __name__ == "__main__":
 
         # think_of_name_later(noisy_path, params_path, noisy_test_path,  \
         #     noisy_files, save_folder="./csv_files/")
->>>>>>> main:utils/txt_to_csv_noisy_test.py
