@@ -34,6 +34,9 @@ def parse_arguments(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_process", type=int, help="number of processes", default=os.cpu_count())
     parser.add_argument("--save_folder", type=str, help="the save location", default="./csv_files/")
+    parser.add_argument("--noisy_path", type=str, help="noisy train files location", default="./data/training_set/noisy_train/")
+    parser.add_argument("--params_path", type=str, help="noisy params train files location", default="./data/training_set/params_train/")
+    parser.add_argument("--noisy_test_path", type=str, help="noisy test files location", default="./data/test_set/noisy_test/")
 
     return parser.parse_args(args)
 
@@ -97,11 +100,9 @@ def think_of_name_later(noisy_files):
 
             df_temp.to_csv(save_folder + f"train_table_{column}.csv", mode="a", header=header, index=False)
 
-        # header = False
+        # header = False 
 
-        
-
-    print("Success")
+    # print("Success")
 
 
 if __name__ == "__main__":
