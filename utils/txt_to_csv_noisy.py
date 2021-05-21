@@ -21,11 +21,6 @@ from multiprocessing import Pool, Process
 
 # files = list(files)
 
-# Local file reading from Example data
-noisy_path = "../Example_data/noisy_train"
-params_path = "../Example_data/params_train"
-noisy_test_path = "../Example_data/noisy_test"
-
 # useful def
 def return_filename_split(file):
     return [file[0:4], file[5:7], file[8:10]]
@@ -40,14 +35,21 @@ def parse_arguments(args):
 
     return parser.parse_args(args)
 
+
 # Focusing on training files only. 
-def think_of_name_later(noisy_files):
+def training_files_to_csv(noisy_files, **kwargs):
     """
     What it does is described at the top of this file. 
     
     :param save_folder: the folder in which the output csv files are to be saved. 
     """
     global noisy_path, params_path, noisy_test_path, save_folder, header
+    if kwargs:
+        noisy_path = kwargs["noisy_path"]
+        params_path = kwargs["params_path"]
+        noisy_test_path = kwargs["noisy_test_path"]
+        save_folder = kwargs["save_folder"]
+        header = kwargs["header"]
 
     # Read concurrent training and testing files into 2 different dataframe. 
     # header = True
@@ -110,6 +112,9 @@ if __name__ == "__main__":
 
     save_folder = arguments.save_folder
     num_process = arguments.num_process
+    noisy_path = arguments.noisy_path
+    params_path = arguments.params_path
+    noisy_test_path = arguments.noisy_test_path
 
     noisy_files = os.listdir(noisy_path)
 
@@ -118,7 +123,7 @@ if __name__ == "__main__":
     first_file = [first_file]
 
     header = True
-    think_of_name_later(first_file)
+    training_files_to_csv(first_file)
 
     header = False
 
@@ -127,7 +132,7 @@ if __name__ == "__main__":
 
     with Pool(processes=num_process) as pool:
 
-        pool.map(think_of_name_later, noisy_files)
+        pool.map(training_files_to_csv, noisy_files)
 
-        # think_of_name_later(noisy_path, params_path, noisy_test_path,  \
+        # training_files_to_csv(noisy_path, params_path, noisy_test_path,  \
         #     noisy_files, save_folder="./csv_files/")
