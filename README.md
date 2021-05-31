@@ -1,4 +1,7 @@
-# ML-challenge-baseline
+# NOTE: 
+This code has been copied from baseline here https://github.com/ucl-exoplanets/ML-challenge-baseline and make amendments based on the already available model. Please refer to the main model creation repo for more information. Credits goes to the original creator. 
+
+## ML-challenge-baseline
 Repository hosting the baseline solution for [Ariel data challenge 2021](https://www.ariel-datachallenge.space/).
 
 This code makes use of [numpy](https://github.com/numpy/numpy) and [pytorch](https://github.com/pytorch/pytorch).
