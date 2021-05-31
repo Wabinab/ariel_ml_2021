@@ -5,7 +5,10 @@ from utils import ArielMLDataset, ChallengeMetric, Baseline, simple_transform
 from torch.utils.data.dataloader import DataLoader
 from torch.nn import MSELoss
 from torch.optim import Adam
+# from torch.multiprocessing import Pool, Process, set_start_method
+from tqdm import tqdm
 import pathlib
+
 
 __author__ = "Mario Morvan"
 __email__ = "mario.morvan.18@ucl.ac.uk"
@@ -14,35 +17,25 @@ project_dir = pathlib.Path(__file__).parent.absolute()
 
 # paths to data dirs
 lc_train_path = project_dir / \
-    "data/noisy_train/home/ucapats/Scratch/ml_data_challenge/training_set/noisy_train"
+    "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/noisy_train"
 params_train_path = project_dir / \
-    "data/params_train/home/ucapats/Scratch/ml_data_challenge/training_set/params_train"
+    "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
 
 # training parameters
-train_size = 512
-val_size = 512
+train_size = 120000
+val_size = 5600
 epochs = 70
 save_from = 20
 
 # hyper-parameters
-H1 = 1024
-H2 = 256
+H1 = 256
+H2 = 1024
+H3 = 256
 
-if __name__ == '__main__':
-    if torch.cuda.is_available():
-        device = 'cuda'
-    else:
-        device = 'cpu'
 
-    # Training
-    dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
-                                   max_size=train_size, transform=simple_transform, device=device)
-    # Validation
-    dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
-                                 max_size=val_size, transform=simple_transform, device=device)
+# -------------------------------------------------
 
-    # Loaders
-    batch_size = int(train_size / 4)
+def train(batch_size, dataset_train, dataset_val):
     loader_train = DataLoader(
         dataset_train, batch_size=batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, batch_size=batch_size)
@@ -67,7 +60,8 @@ if __name__ == '__main__':
         val_loss = 0
         val_score = 0
         baseline.train()
-        for k, item in enumerate(loader_train):
+
+        for k, item in tqdm(enumerate(loader_train)):
             pred = baseline(item['lc'])
             loss = loss_function(item['target'], pred)
             opt.zero_grad()
@@ -76,17 +70,21 @@ if __name__ == '__main__':
             train_loss += loss.detach().item()
         train_loss = train_loss / len(loader_train)
         baseline.eval()
-        for k, item in enumerate(loader_val):
+
+        for k, item in tqdm(enumerate(loader_val)):
             pred = baseline(item['lc'])
             loss = loss_function(item['target'], pred)
             score = challenge_metric.score(item['target'], pred)
             val_loss += loss.detach().item()
             val_score += score.detach().item()
+
         val_loss /= len(loader_val)
         val_score /= len(loader_val)
+
         print('Training loss', round(train_loss, 6))
         print('Val loss', round(val_loss, 6))
         print('Val score', round(val_score, 2))
+
         train_losses += [train_loss]
         val_losses += [val_loss]
         val_scores += [val_score]
@@ -95,6 +93,30 @@ if __name__ == '__main__':
             best_val_score = val_score
             torch.save(baseline, project_dir / 'outputs/model_state.pt')
 
+    return train_losses, val_losses, val_scores, baseline
+
+
+# -------------------------------------------------
+
+if __name__ == '__main__':
+    if torch.cuda.is_available():
+        device = 'cuda'
+    else:
+        device = 'cpu'
+
+    # Training
+    dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
+                                   max_size=train_size, transform=simple_transform, device=device)
+    # Validation
+    dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
+                                 max_size=val_size, transform=simple_transform, device=device)
+
+    # Loaders
+    # batch_size = int(train_size / 16)
+    batch_size = 50
+    
+    train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val)
+    
     np.savetxt(project_dir / 'outputs/train_losses.txt',
                np.array(train_losses))
     np.savetxt(project_dir / 'outputs/val_losses.txt', np.array(val_losses))
