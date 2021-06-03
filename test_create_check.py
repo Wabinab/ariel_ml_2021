@@ -11,8 +11,8 @@ import shutil
 
 from create_check import *
 
-lc_train_path = "/home/chowjunwei37/ariel_ml_2021/data/noisy_train/"
-params_train_path = "/home/chowjunwei37/ariel_ml_2021/data/params_train/"
+lc_train_path = "./data/noisy_train/"
+params_train_path = "./data/params_train/"
 
 @pytest.fixture
 def files(tmpdir):
