@@ -17,14 +17,16 @@ project_dir = pathlib.Path(__file__).parent.absolute()
 
 # paths to data dirs
 lc_train_path = project_dir / \
-    "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/noisy_train"
+    "/home/chowjunwei37/Documents/data/training_set/noisy_train"
 params_train_path = project_dir / \
-    "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
+    "/home/chowjunwei37/Documents/data/training_set/params_train"
+
+prefix = "4"
 
 # training parameters
 train_size = 120000
 val_size = 5600
-epochs = 70
+epochs = 40
 save_from = 20
 
 # hyper-parameters
@@ -41,7 +43,7 @@ def train(batch_size, dataset_train, dataset_val):
     loader_val = DataLoader(dataset_val, batch_size=batch_size)
 
     # Define baseline model
-    baseline = Baseline(H1=H1, H2=H2).double().to(device)
+    baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
 
     # Define Loss, metric and optimizer
     loss_function = MSELoss()
@@ -91,7 +93,7 @@ def train(batch_size, dataset_train, dataset_val):
 
         if epoch >= save_from and val_score > best_val_score:
             best_val_score = val_score
-            torch.save(baseline, project_dir / 'outputs/model_state.pt')
+            torch.save(baseline, project_dir / f'outputs/model_state_{prefix}.pt')
 
     return train_losses, val_losses, val_scores, baseline
 
@@ -112,13 +114,13 @@ if __name__ == '__main__':
                                  max_size=val_size, transform=simple_transform, device=device)
 
     # Loaders
-    # batch_size = int(train_size / 16)
-    batch_size = 50
+    # batch_size = int(train_size / 4)
+    batch_size = 100
     
     train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val)
     
-    np.savetxt(project_dir / 'outputs/train_losses.txt',
+    np.savetxt(project_dir / f'outputs/train_losses_{prefix}.txt',
                np.array(train_losses))
-    np.savetxt(project_dir / 'outputs/val_losses.txt', np.array(val_losses))
-    np.savetxt(project_dir / 'outputs/val_scores.txt', np.array(val_scores))
-    torch.save(baseline, project_dir / 'outputs/model_state.pt')
+    np.savetxt(project_dir / f'outputs/val_losses_{prefix}.txt', np.array(val_losses))
+    np.savetxt(project_dir / f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
+    torch.save(baseline, project_dir / f'outputs/model_state_{prefix}.pt')

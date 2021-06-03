@@ -13,7 +13,7 @@ from torch.nn import Module, Sequential
 
 
 n_wavelengths = 55
-n_timesteps = 300
+n_timesteps = 101
 
 
 class ArielMLDataset(Dataset):
@@ -64,31 +64,33 @@ class ArielMLDataset(Dataset):
     def __getitem__(self, idx):
         item_lc_path = Path(self.lc_path) / self.files[idx]
 
-        # Loading extra 6 parameters. 
-        with open(item_lc_path, "r") as f:
-            temp_storage_str = list(itertools.islice(f, 6))
+        # # Loading extra 6 parameters. 
+        # with open(item_lc_path, "r") as f:
+        #     temp_storage_str = list(itertools.islice(f, 6))
 
-        temp_storage_float = []
+        # temp_storage_float = []
 
-        for string in temp_storage_str:
-            # Separate the digits and the non-digits.
-            new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
+        # for string in temp_storage_str:
+        #     # Separate the digits and the non-digits.
+        #     new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
 
-            # Only new_str[0] is the one we want to omit.
-            # We want to join back into a single string because "." previously is classifed
-            # as non-digit. 
-            new_str = "".join(new_str[1:])  
+        #     # Only new_str[0] is the one we want to omit.
+        #     # We want to join back into a single string because "." previously is classifed
+        #     # as non-digit. 
+        #     new_str = "".join(new_str[1:])  
 
-            # Convert to float. 
-            temp_storage_float.append(float(new_str))
+        #     # Convert to float. 
+        #     temp_storage_float.append(float(new_str))
 
         lc = np.loadtxt(item_lc_path)
+        lc = lc[:, 99:200]
 
         # Note that the line below will automatically flatten our array
         # as it is not the same shape. This allows us to not flatten it later? 
         # I'll leave the flattening and see if it runs. If it doesn't, I'll 
         # remove the flattening (later in the code). 
-        lc = np.append(lc, temp_storage_float)
+
+        # lc = np.append(lc, temp_storage_float)
 
         lc = torch.from_numpy(lc)
 
@@ -113,11 +115,16 @@ def simple_transform(x):
     """
     ##preprocessing##
     out = x.clone()
+
+    # rand_array = np.random.rand(55 * 300 + 6)
     # centering
-    out -= 1.
+    # out -= rand_array
+    out -= 1
+
     # rough rescaling
-    # out /= 0.04
-    out /= abs(out.mean())
+    out /= 0.04
+    # out = np.divide(out, some_std_np_array_with_same_shape)
+    # out /= abs(out.mean())
     return out
 
 
@@ -179,7 +186,7 @@ class ChallengeMetric:
 class Baseline(Module):
     """Baseline model for Ariel ML data challenge 2021"""
 
-    def __init__(self, H1=1024, H2=256, H3=256, input_dim=n_wavelengths*n_timesteps + 6, output_dim=n_wavelengths):
+    def __init__(self, H1=1024, H2=256, H3=256, input_dim=n_wavelengths*n_timesteps, output_dim=n_wavelengths):
         """Define the baseline model for the Ariel data challenge 2021
 
         Args:
@@ -195,11 +202,11 @@ class Baseline(Module):
         super().__init__()
         ##model##
         # self.network = Sequential(torch.nn.Linear(input_dim, H1),
-        #                           torch.nn.ReLU(),
-        #                           torch.nn.Linear(H1, H2),
-        #                           torch.nn.ReLU(),
-        #                           torch.nn.Linear(H2, output_dim),
-        #                           )
+        #                            torch.nn.ReLU(),
+        #                            torch.nn.Linear(H1, H2),
+        #                            torch.nn.ReLU(),
+        #                            torch.nn.Linear(H2, output_dim),
+        #                            )
         # H1 = 256
         # H2 = 1024
         # H3 = 256
@@ -207,6 +214,7 @@ class Baseline(Module):
                                   torch.nn.ReLU(),
                                   torch.nn.Linear(H1, H2),
                                   torch.nn.ReLU(),
+                                #   torch.nn.Dropout(0.1),
                                   torch.nn.Linear(H2, H3),
                                   torch.nn.ReLU(),
                                   torch.nn.Linear(H3, output_dim),
