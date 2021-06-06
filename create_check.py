@@ -38,6 +38,12 @@ def collating(files, **kwargs):
             index_fname += ".csv"
     except KeyError:
         corr_fname = "correlations.csv"
+        
+    if not lc_train_path:
+        lc_train_path = "./data/noisy_train/"
+        
+    if not params_train_path:
+        params_train_path = "./data/params_train/"
 
 
     for file in tqdm(files):
