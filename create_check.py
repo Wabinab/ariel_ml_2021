@@ -8,11 +8,6 @@ from tqdm import tqdm
 # project_dir = pathlib.Path(__file__).parent.absolute()
 
 # paths to data dirs
-lc_train_path = "/home/chowjunwei37/Documents/data/training_set/noisy_train/"
-params_train_path = "/home/chowjunwei37/Documents/data/training_set/params_train/"
-
-
-noisy_files = os.listdir(lc_train_path)
 
 def collating(files, **kwargs):
     """
@@ -33,17 +28,20 @@ def collating(files, **kwargs):
 
         if index_fname[-4] != ".":
             index_fname += ".csv"
-    except KeyError:
-        index_fname = "indexes.csv"
-
-    try:
+            
         corr_fname = kwargs["corr_fname"]
 
         if corr_fname[-4] != ".":
             index_fname += ".csv"
+            
+        # If pass through, means this is a test instead of real runs. 
+        lc_train_path = "./data/noisy_train/"
+        params_train_path = "./data/params_train/"
+        
     except KeyError:
+        index_fname = "indexes.csv"
         corr_fname = "correlations.csv"
-
+        
 
     for file in tqdm(files):
         df = pd.read_csv(lc_train_path + file, delimiter="\t", header=None, skiprows=6)
@@ -78,7 +76,11 @@ def collating(files, **kwargs):
 
 
 if __name__ == "__main__":
+    lc_train_path = "/home/chowjunwei37/Documents/data/training_set/noisy_train/"
+    params_train_path = "/home/chowjunwei37/Documents/data/training_set/params_train/"
+    
     num_processes = os.cpu_count()
+    noisy_files = os.listdir(lc_train_path)
     noisy_files = np.array_split(noisy_files, num_processes)
 
     with Pool(processes=num_processes) as pool:
