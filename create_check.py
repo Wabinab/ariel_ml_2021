@@ -8,9 +8,6 @@ from tqdm import tqdm
 # project_dir = pathlib.Path(__file__).parent.absolute()
 
 # paths to data dirs
-lc_train_path = "/home/chowjunwei37/Documents/data/training_set/noisy_train/"
-params_train_path = "/home/chowjunwei37/Documents/data/training_set/params_train/"
-
 
 def collating(files, **kwargs):
     """
@@ -76,6 +73,9 @@ def collating(files, **kwargs):
 
 
 if __name__ == "__main__":
+    lc_train_path = "/home/chowjunwei37/Documents/data/training_set/noisy_train/"
+    params_train_path = "/home/chowjunwei37/Documents/data/training_set/params_train/"
+    
     num_processes = os.cpu_count()
     noisy_files = os.listdir(lc_train_path)
     noisy_files = np.array_split(noisy_files, num_processes)
