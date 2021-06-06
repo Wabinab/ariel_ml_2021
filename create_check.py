@@ -28,23 +28,20 @@ def collating(files, **kwargs):
 
         if index_fname[-4] != ".":
             index_fname += ".csv"
-    except KeyError:
-        index_fname = "indexes.csv"
-
-    try:
+            
         corr_fname = kwargs["corr_fname"]
 
         if corr_fname[-4] != ".":
             index_fname += ".csv"
+            
+        # If pass through, means this is a test instead of real runs. 
+        lc_train_path = "./data/noisy_train/"
+        params_train_path = "./data/params_train/"
+        
     except KeyError:
+        index_fname = "indexes.csv"
         corr_fname = "correlations.csv"
         
-    if not lc_train_path:
-        lc_train_path = "./data/noisy_train/"
-        
-    if not params_train_path:
-        params_train_path = "./data/params_train/"
-
 
     for file in tqdm(files):
         df = pd.read_csv(lc_train_path + file, delimiter="\t", header=None, skiprows=6)
