@@ -1,7 +1,7 @@
 """Define and train the baseline model"""
 import numpy as np
 import torch
-from utils import ArielMLDataset, ChallengeMetric, Baseline, simple_transform
+from utils import ArielMLDataset, BaselineConv, ChallengeMetric, Baseline, simple_transform
 from torch.utils.data.dataloader import DataLoader
 from torch.nn import MSELoss
 from torch.optim import Adam
@@ -21,7 +21,7 @@ lc_train_path = project_dir / \
 params_train_path = project_dir / \
     "/home/chowjunwei37/Documents/data/training_set/params_train"
 
-prefix = "4"
+prefix = "5"
 
 # training parameters
 train_size = 120000
@@ -43,7 +43,8 @@ def train(batch_size, dataset_train, dataset_val):
     loader_val = DataLoader(dataset_val, batch_size=batch_size)
 
     # Define baseline model
-    baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
+    # baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
+    baseline = BaselineConv().double().to(device)
 
     # Define Loss, metric and optimizer
     loss_function = MSELoss()

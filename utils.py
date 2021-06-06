@@ -13,7 +13,7 @@ from torch.nn import Module, Sequential
 
 
 n_wavelengths = 55
-n_timesteps = 101
+n_timesteps = 300
 
 train_mean = np.loadtxt("./data/mean.txt")  # df.mean()
 train_std = np.loadtxt("./data/std.txt")  # df.std()
@@ -148,10 +148,6 @@ def simple_transform(x):
     ##preprocessing##
     out = x.clone()
 
-    
-
-    # other transformation:
-
 
     # rand_array = np.random.rand(55 * 300 + 6)
     # centering
@@ -223,7 +219,7 @@ class ChallengeMetric:
 class Baseline(Module):
     """Baseline model for Ariel ML data challenge 2021"""
 
-    def __init__(self, H1=1024, H2=256, H3=256, input_dim=n_wavelengths*n_timesteps, output_dim=n_wavelengths):
+    def __init__(self, H1=1024, H2=256, H3=256, input_dim=n_wavelengths*n_timesteps + 5, output_dim=n_wavelengths):
         """Define the baseline model for the Ariel data challenge 2021
 
         Args:
@@ -269,17 +265,25 @@ class Baseline(Module):
  ## convolution nn ##
 class BaselineConv(Module):
 
-    def __init__(self, H1=1024, input_dim=n_wavelengths*n_timesteps + 6, output_dim=n_wavelengths):
+    def __init__(self, H1=1024, H2 = 256, input_dim=n_wavelengths*n_timesteps + 5, output_dim=n_wavelengths):
         super().__init__()
         
-        self.layer1 = torch.nn.Conv1d(in_channels=input_dim, out_channels=H1, kernel_size=5, stride=2)
+        self.layer1 = torch.nn.Conv1d(in_channels=input_dim, out_channels=H1, kernel_size=1, stride=2)
         self.act1 = torch.nn.ReLU()
-        self.layer2 = torch.nn.Conv1d(in_channels=H1, out_channels=output_dim, kernel_size=1)
+        self.layer2 = torch.nn.Conv1d(in_channels=H1, out_channels=H2, kernel_size=1)
+        self.act2 = torch.nn.ReLU()
+        self.layer3 = torch.nn.Linear(H2, output_dim)
 
     def forward(self, x):
+        x = torch.unsqueeze(x, 2)
+        # x = torch.reshape(x, (100 ,3301, 5))  # batch_size, input_dim // kernel_size, kernel_size
+
         x = self.layer1(x)
         x = self.act1(x)
         x = self.layer2(x)
+        x = self.act2(x)
+        x = torch.flatten(x, start_dim=1)
+        x = self.layer3(x)
         # log_probs = torch.nn.functional.log_softmax(x, dim=1)
         # return log_probs
         return x
