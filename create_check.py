@@ -12,8 +12,6 @@ lc_train_path = "/home/chowjunwei37/Documents/data/training_set/noisy_train/"
 params_train_path = "/home/chowjunwei37/Documents/data/training_set/params_train/"
 
 
-noisy_files = os.listdir(lc_train_path)
-
 def collating(files, **kwargs):
     """
     Collect the 101 (including self) most important attributes (excluding extra params)
@@ -79,6 +77,7 @@ def collating(files, **kwargs):
 
 if __name__ == "__main__":
     num_processes = os.cpu_count()
+    noisy_files = os.listdir(lc_train_path)
     noisy_files = np.array_split(noisy_files, num_processes)
 
     with Pool(processes=num_processes) as pool:
