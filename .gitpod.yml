@@ -1,3 +1,7 @@
+ports:
+  - port: 8888
+  - port: 8080
+
 tasks:
   - init: npm install
     command: |
@@ -22,3 +26,8 @@ github:
     addBadge: true
 # add a label once the prebuild is ready to pull requests (defaults to false)
     addLabel: false
+
+
+vscode:
+  extensions:
+    - ms-python.python
