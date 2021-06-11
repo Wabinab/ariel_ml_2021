@@ -6,6 +6,7 @@ import argparse
 import hypertune
 import numpy as np
 import pathlib
+import sys
 import torch
 from utils import ArielMLDataset, ChallengeMetric, Baseline, simple_transform
 from torch.utils.data.dataloader import DataLoader
@@ -15,25 +16,25 @@ from torch.optim import Adam
 from tqdm import tqdm
 
 
-def get_args():
+def get_args(args):
     """
     Argument parser. 
     Returns: (dict) Arguments. 
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--H1", help="first layer of Dense model")
-    parser.add_argument("--H2", help="second layer of Dense model")
-    parser.add_argument("--H3", help="third layer of Dense model")
-    parser.add_argument("--D1", help="Dropout probability")
-    parser.add_argument("--mean", help="mean to subtract from for transformation")
-    parser.add_argument("--std", help="std dev to divide from for transformation")
-    parser.add_argument("--lr", help="learning rate of Adam optimizer")
-    parser.add_argument("--batch_size", help="determine batch size")
+    parser.add_argument("--H1", type=int, help="first layer of Dense model")
+    parser.add_argument("--H2", type=int, help="second layer of Dense model")
+    parser.add_argument("--H3", type=int, help="third layer of Dense model")
+    parser.add_argument("--D1", type=float, help="Dropout probability")
+    parser.add_argument("--mean", type=float, help="mean to subtract from for transformation")
+    parser.add_argument("--std", type=float, help="std dev to divide from for transformation")
+    parser.add_argument("--lr", type=float, help="learning rate of Adam optimizer")
+    parser.add_argument("--batch_size", type=int, help="determine batch size")
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
-def train(args, dataset_train, dataset_val):
+def train(args, dataset_train, dataset_val, device):
     loader_train = DataLoader(
         dataset_train, batch_size=args.batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, batch_size=args.batch_size)
@@ -79,7 +80,7 @@ def train(args, dataset_train, dataset_val):
 
 
 def main():
-    args = get_args()
+    args = get_args(sys.argv[1:])
 
     if torch.cuda.is_available():
         device = 'cuda'
@@ -89,21 +90,17 @@ def main():
     train_size = 120000
     val_size = 5600
 
-    
-
     # Training
-    dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
+    dataset_train = ArielMLDataset(None, params_path="./", shuffle=True, start_ind=0,
                                    max_size=train_size, transform=simple_transform, device=device,
                                    mean=args.mean, std=args.std)
     # Validation
-    dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
+    dataset_val = ArielMLDataset(None, params_path="./", shuffle=True, start_ind=train_size,
                                  max_size=val_size, transform=simple_transform, device=device,
                                  mean=args.mean, std=args.std)
 
     # Loaders
-    batch_size = args.batch_size
-
-    train(args, dataset_train, dataset_val)
+    train(args, dataset_train, dataset_val, device)
 
 
 if __name__ == "__main__":

@@ -7,11 +7,11 @@ from google.cloud import aiplatform
 
 
 def create_hyperparameter_tuning_job_python_package(
-    project: str,
-    display_name: str,
+    project: str = "fifthproj",
+    display_name: str = "ariel ml hyperparameter tuning",
     executor_image_uri: str = "us-docker.pkg.dev/vertex-ai/training/tf-cpu.2-4:latest",
-    package_uri: str,
-    python_module: str,
+    package_uri: str = "gs://trainingbucket3113/",
+    python_module: str = "train_second",
     location: str = "us-central1",
     api_endpoint: str = "us-central1-aiplatform.googleapis.com",
 ):
@@ -110,6 +110,28 @@ def create_hyperparameter_tuning_job_python_package(
         "machine_spec": machine_spec,
         "replica_count": 1, 
         "python_package_spec": {
-
+            "executor_image_uri": executor_image_uri,
+            "package_uris": [package_uri],
+            "python_module": python_module,
+            "args": [],
         }
     }
+
+    # hparam tuning job
+    hyperparameter_tuning_job = {
+        "display_name": display_name,
+        "max_trial_count": 2, 
+        "parallel_trial_count": 2,
+        "study_spec": {
+            "metrics": [metric],
+            "parameters": [parameter],
+        },
+        "trial_job_spec": {"worker_pool_specs": [worker_pool_spec]},
+    }
+
+    parent = f"projects/{project}/locations/{location}"
+    response = client.create_hyperparameter_tuning_job(
+        parent=parent, hyperparameter_tuning_job=hyperparameter_tuning_job
+    )
+    print(f"response:", response)
+

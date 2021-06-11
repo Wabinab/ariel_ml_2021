@@ -8,6 +8,9 @@ from pathlib import Path
 from torch.utils.data import Dataset
 from torch.nn import Module, Sequential
 
+from google.cloud import storage
+from io import StringIO
+
 # __author__ = "Mario Morvan"
 # __email__ = "mario.morvan.18@ucl.ac.uk"
 
@@ -20,8 +23,8 @@ train_std = np.loadtxt("./data/std.txt")  # df.std()
 # train_abs = np.loadtxt("./data/mod_abs.txt")
 
 # To not use star_logg.
-train_mean = np.delete(train_mean, -5)
-train_std = np.delete(train_std, -5)
+train_mean = np.delete(train_mean, -6)
+train_std = np.delete(train_std, -6)
 # train_abs = np.delete(train_abs, -5)
 
 class ArielMLDataset(Dataset):
@@ -54,14 +57,24 @@ class ArielMLDataset(Dataset):
             std: int or list or array
                 std dev of values
         """
-        self.lc_path = lc_path
+        
+        self.storage_client = storage.Client()
+        self.bucket = self.storage_client.get_bucket("trainingbucket3113")
+
+        # self.lc_path = lc_path
         self.transform = transform
         self.device = device
         self.mean = mean
         self.std = std
 
+        # self.files = sorted(
+        #     [p for p in os.listdir(self.lc_path) if p.endswith('txt')])
         self.files = sorted(
-            [p for p in os.listdir(self.lc_path) if p.endswith('txt')])
+            [p.name for p in self.storage_client.list_blobs("trainingbucket3113", prefix="noisy_train/")]
+        )
+        self.param_files = sorted(
+            [p.name for p in self.storage_client.list_blobs("trainingbucket3113", prefix="params_train/")]
+        )
         if shuffle:
             np.random.seed(seed)
             np.random.shuffle(self.files)
@@ -77,7 +90,14 @@ class ArielMLDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, idx):
-        item_lc_path = Path(self.lc_path) / self.files[idx]
+        # item_lc_path = Path(self.lc_path) / self.files[idx]
+
+        # Directly from gcp bucket
+        blob = self.bucket.blob(self.files[idx])
+        blob = blob.download_as_string()
+        blob = blob.decode("utf-8")
+
+        item_lc_path = StringIO(blob)
 
         # Loading extra 6 parameters. 
         # with open(item_lc_path, "r") as f:
@@ -136,7 +156,15 @@ class ArielMLDataset(Dataset):
         if self.transform:
             lc = self.transform(lc, self.mean, self.std)
         if self.params_path is not None:
-            item_params_path = Path(self.params_path) / self.files[idx]
+            # item_params_path = Path(self.params_path) / self.files[idx]
+
+            # gcp method
+            pblob = self.bucket.blob(self.param_files[idx])
+            pblob = pblob.download_as_string()
+            pblob = pblob.decode("utf-8")
+
+            item_params_path = StringIO(pblob)
+
             target = torch.from_numpy(np.loadtxt(item_params_path))
         else:
             target = torch.Tensor()
