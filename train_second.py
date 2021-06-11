@@ -86,6 +86,11 @@ def main():
     else:
         device = 'cpu'
 
+    train_size = 120000
+    val_size = 5600
+
+    
+
     # Training
     dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
                                    max_size=train_size, transform=simple_transform, device=device,
