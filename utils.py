@@ -28,7 +28,8 @@ class ArielMLDataset(Dataset):
     """Class for reading files for the Ariel ML data challenge 2021"""
 
     def __init__(self, lc_path, params_path=None, transform=None, start_ind=0,
-                 max_size=int(1e9), shuffle=True, seed=None, device=None):
+                 max_size=int(1e9), shuffle=True, seed=None, device=None, mean=train_mean, 
+                 std=train_std):
         """Create a pytorch dataset to read files for the Ariel ML Data challenge 2021
 
         Args:
@@ -48,10 +49,16 @@ class ArielMLDataset(Dataset):
                 numpy seed to set in case of shuffling
             device: str
                 torch device
+            mean: int or list or array
+                mean of values
+            std: int or list or array
+                std dev of values
         """
         self.lc_path = lc_path
         self.transform = transform
         self.device = device
+        self.mean = mean
+        self.std = std
 
         self.files = sorted(
             [p for p in os.listdir(self.lc_path) if p.endswith('txt')])
@@ -73,22 +80,22 @@ class ArielMLDataset(Dataset):
         item_lc_path = Path(self.lc_path) / self.files[idx]
 
         # Loading extra 6 parameters. 
-        with open(item_lc_path, "r") as f:
-            temp_storage_str = list(itertools.islice(f, 6))
+        # with open(item_lc_path, "r") as f:
+        #     temp_storage_str = list(itertools.islice(f, 6))
 
-        temp_storage_float = []
+        # temp_storage_float = []
 
-        for string in temp_storage_str:
-            # Separate the digits and the non-digits.
-            new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
+        # for string in temp_storage_str:
+        #     # Separate the digits and the non-digits.
+        #     new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
 
-            # Only new_str[0] is the one we want to omit.
-            # We want to join back into a single string because "." previously is classifed
-            # as non-digit. 
-            new_str = "".join(new_str[1:])  
+        #     # Only new_str[0] is the one we want to omit.
+        #     # We want to join back into a single string because "." previously is classifed
+        #     # as non-digit. 
+        #     new_str = "".join(new_str[1:])  
 
-            # Convert to float. 
-            temp_storage_float.append(float(new_str))
+        #     # Convert to float. 
+        #     temp_storage_float.append(float(new_str))
 
         # Transformation done here since it is easier to work with python list
         # than with numpy in terms of single element alterations, although this 
@@ -100,19 +107,19 @@ class ArielMLDataset(Dataset):
         # star k mag min 7.0
         # period max 16.0
 
-        temp_storage_float.pop(-5)
+        # temp_storage_float.pop(-5)
         
-        if temp_storage_float[-4] > 1.8:
-            temp_storage_float[-4] = 1.8
+        # if temp_storage_float[-4] > 1.8:
+        #     temp_storage_float[-4] = 1.8
 
-        if temp_storage_float[-3] > 1.5:
-            temp_storage_float[-3] = 1.5
+        # if temp_storage_float[-3] > 1.5:
+        #     temp_storage_float[-3] = 1.5
 
-        if temp_storage_float[-2] < 7.0:
-            temp_storage_float[-2] = 7.0
+        # if temp_storage_float[-2] < 7.0:
+        #     temp_storage_float[-2] = 7.0
 
-        if temp_storage_float[-1] > 16.0:
-            temp_storage_float[-1] = 16.0
+        # if temp_storage_float[-1] > 16.0:
+        #     temp_storage_float[-1] = 16.0
 
         lc = np.loadtxt(item_lc_path)
         # lc = lc[:, 99:200]
@@ -122,12 +129,12 @@ class ArielMLDataset(Dataset):
         # I'll leave the flattening and see if it runs. If it doesn't, I'll 
         # remove the flattening (later in the code). 
 
-        lc = np.append(lc, temp_storage_float)
+        # lc = np.append(lc, temp_storage_float)
 
         lc = torch.from_numpy(lc)
 
         if self.transform:
-            lc = self.transform(lc)
+            lc = self.transform(lc, self.mean, self.std)
         if self.params_path is not None:
             item_params_path = Path(self.params_path) / self.files[idx]
             target = torch.from_numpy(np.loadtxt(item_params_path))
@@ -137,7 +144,7 @@ class ArielMLDataset(Dataset):
                 'target': target.to(self.device)}
 
 
-def simple_transform(x):
+def simple_transform(x, mean, std):
     """Perform a simple preprocessing of the input light curve array
     Args:
         x: np.array
@@ -152,10 +159,10 @@ def simple_transform(x):
     # rand_array = np.random.rand(55 * 300 + 6)
     # centering
     # out -= rand_array
-    out -= train_mean
+    out -= mean
 
     # rough rescaling
-    out /= train_std
+    out /= std
     # out = np.divide(out, some_std_np_array_with_same_shape)
     # out /= abs(out.mean())
     return out
@@ -219,7 +226,7 @@ class ChallengeMetric:
 class Baseline(Module):
     """Baseline model for Ariel ML data challenge 2021"""
 
-    def __init__(self, H1=1024, H2=256, H3=256, input_dim=n_wavelengths*n_timesteps + 5, output_dim=n_wavelengths):
+    def __init__(self, H1=1024, H2=256, H3=256, D1=0.1, input_dim=n_wavelengths*n_timesteps, output_dim=n_wavelengths):
         """Define the baseline model for the Ariel data challenge 2021
 
         Args:
@@ -247,6 +254,7 @@ class Baseline(Module):
                                   torch.nn.ReLU(),
                                   torch.nn.Linear(H1, H2),
                                   torch.nn.ReLU(),
+                                  torch.nn.Dropout(D1, inplace=True),
                                   torch.nn.Linear(H2, H3),
                                   torch.nn.ReLU(),
                                   torch.nn.Linear(H3, output_dim),
