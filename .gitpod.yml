@@ -7,6 +7,7 @@ tasks:
     command: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
+      export GOOGLE_APPLICATION_CREDENTIALS="fifthproj-667ffe8dd51e.json"
       
 github:
   prebuilds:

@@ -120,7 +120,7 @@ def create_hyperparameter_tuning_job_python_package(
     # hparam tuning job
     hyperparameter_tuning_job = {
         "display_name": display_name,
-        "max_trial_count": 2, 
+        "max_trial_count": 1000, 
         "parallel_trial_count": 2,
         "study_spec": {
             "metrics": [metric],
@@ -135,3 +135,6 @@ def create_hyperparameter_tuning_job_python_package(
     )
     print(f"response:", response)
 
+
+if __name__ == "__main__":
+    create_hyperparameter_tuning_job_python_package()

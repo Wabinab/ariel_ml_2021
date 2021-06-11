@@ -1,9 +1,9 @@
 numpy
 matplotlib
-torch==1.8.1+cpu
-torchvision==0.9.1+cpu
-torchaudio==0.8.1
+torch
 pytest
 pandas
 tqdm
 cloudml-hypertune
+google-cloud-aiplatform
+google-cloud-storage
