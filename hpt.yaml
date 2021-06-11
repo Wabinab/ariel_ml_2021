@@ -1,0 +1,43 @@
+studySpec:
+  metrics:
+  - metricId: ariel_score
+    goal: MAXIMIZE
+
+  parameters:
+    - parameterId: H1
+      discreteValueSpec:
+        values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    - parameterId: H2
+      discreteValueSpec:
+        values: [64, 128, 256, 512, 1024]
+    - parameterId: H3
+      discreteValueSpec:
+        values: [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    - parameterId: D1
+      doubleValueSpec:
+        minValue: 0.01
+        maxValue: 0.5
+    - parameterId: mean
+      discreteValueSpec:
+        values: [0.0, 1.0]
+    - parameterId: std 
+      doubleValueSpec:
+        minValue: 0.005
+        maxValue: 0.5
+    - parameterId: lr
+      discreteValueSpec:
+        values: [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3]
+    - parameterId: batch_size
+      discreteValueSpec:
+        values: [10, 25, 50, 100]
+
+trialJobSpec:
+  workerPoolSpecs: 
+    - machineSpec: 
+        machineType: e2-standard-4
+      replicaCount: 1
+      pythonPackageSpec:
+        executorImageUri: us-docker.pkg.dev/vertex-ai/training/tf-cpu.2-4:latest
+        packageUris: gs://trainingbucket3113/
+        pythonModule: train_second
+        
