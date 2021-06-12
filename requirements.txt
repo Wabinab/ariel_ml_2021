@@ -7,3 +7,4 @@ tqdm
 cloudml-hypertune
 google-cloud-aiplatform
 google-cloud-storage
+wandb
