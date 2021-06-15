@@ -7,3 +7,7 @@ pytest
 scipy
 scikit-learn
 tqdm
+google-cloud-bigquery
+google-cloud-storage
+xgboost
+bayesian-optimization

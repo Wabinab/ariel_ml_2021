@@ -1,6 +1,6 @@
 ports:
-  - port: 8888
-  - port: 8080
+  - port: 8000-8999
+    onOpen: ignore
 
 tasks:
   - init: npm install
