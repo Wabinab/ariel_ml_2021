@@ -1,0 +1,165 @@
+Table number 0
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 1
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 2
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 3
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 4
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 5
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 6
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 7
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 8
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 9
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 10
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 11
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 12
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 13
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 14
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 15
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 16
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 17
+{'colsample_bytree': 0.999, 'gamma': 1, 'learning_rate': 0.3, 'reg_alpha': 1, 'reg_lambda': 19, 'subsample': 0.999, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 18
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 19
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 20
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 21
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 22
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 23
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 24
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 25
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 26
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 27
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 28
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 29
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 30
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 31
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 32
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 33
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 34
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 35
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 36
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 37
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 38
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 39
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 40
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 41
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 42
+{'colsample_bytree': 0.3718784330735668, 'gamma': 1, 'learning_rate': 0.3, 'reg_alpha': 28, 'reg_lambda': 78, 'subsample': 0.999, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 43
+{'colsample_bytree': 0.999, 'gamma': 1, 'learning_rate': 0.3, 'reg_alpha': 100, 'reg_lambda': 100, 'subsample': 0.999, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 44
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 45
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 46
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 47
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 48
+{'colsample_bytree': 0.2834940387114346, 'gamma': 1, 'learning_rate': 0.19044554350779425, 'reg_alpha': 91, 'reg_lambda': 37, 'subsample': 0.8725344440270815, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 49
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 50
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 51
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 52
+{'colsample_bytree': 0.999, 'gamma': 1, 'learning_rate': 0.3, 'reg_alpha': 100, 'reg_lambda': 100, 'subsample': 0.999, 'max_depth': 15, 'n_estimators': 50}
+
+Table number 53
+{'colsample_bytree': 0.03656843611844854, 'gamma': 1, 'learning_rate': 0.20015735931148657, 'reg_alpha': 51, 'reg_lambda': 6, 'subsample': 0.706407720122008, 'max_depth': 15, 'n_estimators': 25}
+
+Table number 54
+{'colsample_bytree': 0.999, 'gamma': 1, 'learning_rate': 0.3, 'reg_alpha': 46, 'reg_lambda': 40, 'subsample': 0.999, 'max_depth': 15, 'n_estimators': 25}
+
