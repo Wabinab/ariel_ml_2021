@@ -160,3 +160,5 @@ Table number 52
 Table number 53
 {'target': -0.0006293007617256243, 'params': {'colsample_bytree': 0.4536265958548578, 'gamma': 2.550237943613144, 'learning_rate': 0.2537562970059227, 'reg_alpha': 47.83406302628736, 'reg_lambda': 51.06026717240117, 'subsample': 0.6740151166437537}}
 
+Table number 54
+{'target': -0.0009867981868895153, 'params': {'colsample_bytree': 0.999, 'gamma': 1.0, 'learning_rate': 0.3, 'reg_alpha': 46.40631834451901, 'reg_lambda': 40.94933093665028, 'subsample': 0.999}}
