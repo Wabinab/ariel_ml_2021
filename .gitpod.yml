@@ -3,18 +3,16 @@ ports:
     onOpen: ignore
 
 tasks:
-  - before: |
-      echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-      sudo apt-get install apt-transport-https ca-certificates gnupg --yes
-      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
-    init: | 
-      npm install
-      sudo apt-get update && sudo apt-get install google-cloud-sdk --yes
-      sudo apt-get install google-cloud-sdk-app-engine-python google-cloud-sdk-app-engine-python-extras --yes
+  - init: npm install
     prebuild: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
     command: |
+      echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+      sudo apt-get install apt-transport-https ca-certificates gnupg --yes
+      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+      sudo apt-get update && sudo apt-get install google-cloud-sdk --yes
+      sudo apt-get install google-cloud-sdk-app-engine-python google-cloud-sdk-app-engine-python-extras --yes
       gcloud init
       export GOOGLE_APPLICATION_CREDENTIALS="/workspace/ariel_ml_2021/sunlit-analyst-309609-77b8e2f94cb5.json"
       
