@@ -42,7 +42,7 @@ H4 = 256
 n_timesteps = 300
 n_wavelengths = 55
 
-main = True
+main = False
 
 
 if __name__ == "__main__":
@@ -65,6 +65,8 @@ if __name__ == "__main__":
         start = i * 50
         stop = (i + 1) * 50
 
+        print("Training range: ", start, " ", stop)
+
         dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
                                    max_size=train_size, transform=simple_transform, device=device,
                                    start=start, stop=stop)
@@ -75,7 +77,7 @@ if __name__ == "__main__":
 
         batch_size = 50
 
-        baseline = Baseline(H1=H1, H2=H2, H3=H3, input_dim=(start - stop) * n_wavelengths)
+        baseline = Baseline(H1=H1, H2=H2, H3=H3, input_dim=abs(start - stop) * n_wavelengths)
 
         train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
                                                                 epochs, save_from)
@@ -89,6 +91,7 @@ if __name__ == "__main__":
 
     # ----------------------------------------
     # UPLOAD OR DOWNLOAD MODELS FROM GCP FOR HERE (TBC)
+    os.system("gsutil -m cp -r ./model/*.pt gs://arielml_data/trained_model/20062021/")
     # ----------------------------------------
 
 

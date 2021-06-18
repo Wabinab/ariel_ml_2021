@@ -77,6 +77,8 @@ class ArielMLDataset(Dataset):
         if self.transform:  # Transform first so we don't have to worry about how to do for error.
             lc = self.transform(lc)
 
+        file_without_dottxt = None
+
         if self.error_dataset is not None:
             file_without_dottxt = str(self.files[idx]).split(".")[0]
             error_numpy = np.array( self.error_dataset[file_without_dottxt] )
@@ -88,8 +90,7 @@ class ArielMLDataset(Dataset):
         else:
             target = torch.Tensor()
         return {'lc': lc.to(self.device),
-                'target': target.to(self.device), 
-                'filename': file_without_dottxt}
+                'target': target.to(self.device)}
 
 
 def simple_transform(x):
