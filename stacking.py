@@ -87,6 +87,11 @@ if __name__ == "__main__":
         torch.save(baseline, project_dir / f'model/model_state_{i}.pt')
 
 
+    # ----------------------------------------
+    # UPLOAD OR DOWNLOAD MODELS FROM GCP FOR HERE (TBC)
+    # ----------------------------------------
+
+
     if main is True:
         # First, calculate the errors on the TRAINING dataset. 
         # Ideally, they will be saved into one .csv file since we are flattening it anyways. 
