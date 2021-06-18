@@ -42,7 +42,7 @@ H4 = 256
 n_timesteps = 300
 n_wavelengths = 55
 
-main = False
+main = True
 
 
 if __name__ == "__main__":
@@ -91,11 +91,15 @@ if __name__ == "__main__":
 
     # ----------------------------------------
     # UPLOAD OR DOWNLOAD MODELS FROM GCP FOR HERE (TBC)
-    os.system("gsutil -m cp -r ./model/*.pt gs://arielml_data/trained_model/20062021/")
+    if main is False:
+        os.system("gsutil -m cp -r ./model/*.pt gs://arielml_data/trained_model/20062021/")
     # ----------------------------------------
 
 
     if main is True:
+        # Before first, we need to download the files from gcp
+        os.system("gsutil -m cp -r gs://arielml_data/trained_model/20062021/*.pt ./model/")
+
         # First, calculate the errors on the TRAINING dataset. 
         # Ideally, they will be saved into one .csv file since we are flattening it anyways. 
 
