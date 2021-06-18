@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
         batch_size = 50
 
-        baseline = Baseline(H1=H1, H2=H2, H3=H3, input_dim=abs(start - stop) * n_wavelengths)
+        baseline = Baseline(H1=H1, H2=H2, H3=H3, input_dim=abs(start - stop) * n_wavelengths).double().to(device)
 
         train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
                                                                 epochs, save_from)
@@ -146,7 +146,7 @@ if __name__ == "__main__":
         # which is a bad practice. 
 
         total_length = (n_timesteps * n_wavelengths) + np.array(pred).flatten().size
-        baseline = Baseline(H1=256, H2=1024, H3=1024, H4=256, input_dim=total_length, model_num=2)
+        baseline = Baseline(H1=256, H2=1024, H3=1024, H4=256, input_dim=total_length, model_num=2).double().to(device)
 
         train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
                                                                 epochs, save_from)

@@ -38,12 +38,18 @@ H3 = 256
 # -------------------------------------------------
 
 def train(batch_size, dataset_train, dataset_val, baseline=None, epochs=10, save_from=5):
+    if torch.cuda.is_available():
+        device = 'cuda'
+    else:
+        device = 'cpu'
+    
     loader_train = DataLoader(
         dataset_train, batch_size=batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, batch_size=batch_size)
 
     # Define baseline model
-    baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
+    if baseline is None:
+        baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
 
     # Define Loss, metric and optimizer
     loss_function = MSELoss()
