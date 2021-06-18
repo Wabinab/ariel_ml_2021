@@ -19,8 +19,8 @@ class ArielMLDataset(Dataset):
     """Class for reading files for the Ariel ML data challenge 2021"""
 
     def __init__(self, lc_path, params_path=None, transform=None, start_ind=0,
-                 max_size=int(1e9), shuffle=True, seed=None, device=None, start=0, 
-                 stop=300, error_dataset=None):
+                 max_size=int(1e9), shuffle=True, seed=None, device=None, start=None, 
+                 stop=None, error_dataset=None):
         """Create a pytorch dataset to read files for the Ariel ML Data challenge 2021
 
         Args:
@@ -196,7 +196,9 @@ class Baseline(Module):
                                     torch.nn.ReLU(),
                                     torch.nn.Linear(H3, output_dim),
                                     )  
-        else: 
+
+        else:   
+            # Not sure if this will overfit since we don't regularize it. 
             self.network = Sequential(torch.nn.Linear(input_dim, H1),
                                     torch.nn.ReLU(),
                                     torch.nn.Linear(H1, H2),

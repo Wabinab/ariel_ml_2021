@@ -39,6 +39,7 @@ H2 = 1024
 H3 = 256
 H4 = 256
 
+n_timesteps = 300
 n_wavelengths = 55
 
 main = True
@@ -66,17 +67,18 @@ if __name__ == "__main__":
 
         dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
                                    max_size=train_size, transform=simple_transform, device=device,
-                                   start=start, stop=stop, error_dataset=error_dataset)
+                                   start=start, stop=stop)
 
         dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
                                  max_size=val_size, transform=simple_transform, device=device,
-                                 start=start, stop=stop, error_dataset=error_dataset)
+                                 start=start, stop=stop)
 
         batch_size = 50
 
-        baseline = Baseline(H1=H1, H2=H2, H3=H3, input_dim=50*n_wavelengths)
+        baseline = Baseline(H1=H1, H2=H2, H3=H3, input_dim=(start - stop) * n_wavelengths)
 
-        train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline)
+        train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
+                                                                epochs, save_from)
 
         np.savetxt(project_dir / f'outputs/train_losses_{i}.txt',
                np.array(train_losses))
@@ -117,4 +119,31 @@ if __name__ == "__main__":
 
         # Start preparation for training second layer model. 
 
+        dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
+                                   max_size=train_size, transform=simple_transform, device=device,
+                                   error_dataset=train_eval_df)
+
+        dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
+                                 max_size=val_size, transform=simple_transform, device=device,
+                                 error_dataset=train_eval_df)
+
+        batch_size = 50
+
+        # Provided that "pred" has not been deleted yet, this will success
+        # If it failed, it should stop immediately. No assertion had been put in place
+        # which is a bad practice. 
+
+        total_length = (n_timesteps * n_wavelengths) + np.array(pred).flatten().size
+        baseline = Baseline(H1=256, H2=1024, H3=1024, H4=256, input_dim=total_length, model_num=2)
+
+        train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
+                                                                epochs, save_from)
+
+        prefix = "finale"
+
+        np.savetxt(project_dir / f'outputs/train_losses_{prefix}.txt',
+               np.array(train_losses))
+        np.savetxt(project_dir / f'outputs/val_losses_{prefix}.txt', np.array(val_losses))
+        np.savetxt(project_dir / f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
+        torch.save(baseline, project_dir / f'outputs/model_state_{prefix}.pt')
         

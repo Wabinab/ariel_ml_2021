@@ -21,23 +21,23 @@ lc_train_path = project_dir / \
 params_train_path = project_dir / \
     "/home/chowjunwei37/Documents/data/training_set/params_train"
 
-prefix = "5"
+# prefix = "5"
 
 # training parameters
 train_size = 120000
 val_size = 5600
-epochs = 40
-save_from = 20
+# epochs = 40
+# save_from = 20
 
-# hyper-parameters
-H1 = 256
-H2 = 1024
-H3 = 256
+# # hyper-parameters
+# H1 = 256
+# H2 = 1024
+# H3 = 256
 
 
 # -------------------------------------------------
 
-def train(batch_size, dataset_train, dataset_val, baseline):
+def train(batch_size, dataset_train, dataset_val, baseline, epochs, save_from):
     loader_train = DataLoader(
         dataset_train, batch_size=batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, batch_size=batch_size)
@@ -100,27 +100,27 @@ def train(batch_size, dataset_train, dataset_val, baseline):
 
 # -------------------------------------------------
 
-if __name__ == '__main__':
-    if torch.cuda.is_available():
-        device = 'cuda'
-    else:
-        device = 'cpu'
+# if __name__ == '__main__':
+#     if torch.cuda.is_available():
+#         device = 'cuda'
+#     else:
+#         device = 'cpu'
 
-    # Training
-    dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
-                                   max_size=train_size, transform=simple_transform, device=device)
-    # Validation
-    dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
-                                 max_size=val_size, transform=simple_transform, device=device)
+#     # Training
+#     dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
+#                                    max_size=train_size, transform=simple_transform, device=device)
+#     # Validation
+#     dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
+#                                  max_size=val_size, transform=simple_transform, device=device)
 
-    # Loaders
-    # batch_size = int(train_size / 4)
-    batch_size = 100
+#     # Loaders
+#     # batch_size = int(train_size / 4)
+#     batch_size = 100
     
-    train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val)
+#     train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val)
     
-    np.savetxt(project_dir / f'outputs/train_losses_{prefix}.txt',
-               np.array(train_losses))
-    np.savetxt(project_dir / f'outputs/val_losses_{prefix}.txt', np.array(val_losses))
-    np.savetxt(project_dir / f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
-    torch.save(baseline, project_dir / f'outputs/model_state_{prefix}.pt')
+#     np.savetxt(project_dir / f'outputs/train_losses_{prefix}.txt',
+#                np.array(train_losses))
+#     np.savetxt(project_dir / f'outputs/val_losses_{prefix}.txt', np.array(val_losses))
+#     np.savetxt(project_dir / f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
+#     torch.save(baseline, project_dir / f'outputs/model_state_{prefix}.pt')
