@@ -107,6 +107,9 @@ if __name__ == "__main__":
         train_eval_df = pd.DataFrame()
         baselines = np.array([torch.load(path_) for path_ in glob.glob("./model/*.pt")])
 
+        files = sorted(
+            [p for p in os.listdir(lc_train_path) if p.endswith('txt')])
+
         for k, item in tqdm.tqdm(enumerate(loader_train_eval)):  # I actually don't know why enum here
             y_true = np.array(item["target"])
 
@@ -119,8 +122,9 @@ if __name__ == "__main__":
                 abs_error = y_pred - y_true  # we are not finding the absolute error here. Just "difference". 
 
                 pred += abs_error
-
-            train_eval_df[item["filename"]] = np.array(pred).flatten()
+            
+            file = str(files[k]).split(".")[0]
+            train_eval_df[file] = np.array(pred).flatten()
 
         train_eval_df.to_csv("./outputs/train_errors.csv", header=False, sep=",", index=False)
 
