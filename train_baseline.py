@@ -37,14 +37,13 @@ H3 = 256
 
 # -------------------------------------------------
 
-def train(batch_size, dataset_train, dataset_val):
+def train(batch_size, dataset_train, dataset_val, baseline):
     loader_train = DataLoader(
         dataset_train, batch_size=batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, batch_size=batch_size)
 
     # Define baseline model
     # baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
-    baseline = BaselineConv().double().to(device)
 
     # Define Loss, metric and optimizer
     loss_function = MSELoss()
