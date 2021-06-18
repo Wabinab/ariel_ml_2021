@@ -2,6 +2,7 @@
 Stacking Machine Learning Algorithm.
 Created on: 18 June 2021.
 """
+import glob
 import os
 import numpy as np
 import torch
@@ -13,6 +14,7 @@ from torch.optim import Adam
 # from torch.multiprocessing import Pool, Process, set_start_method
 from tqdm import tqdm
 import pathlib
+from sklearn.metrics import mean_squared_error
 
 
 project_dir = pathlib.Path(__file__).parent.absolute()
@@ -50,10 +52,15 @@ if __name__ == "__main__":
 
     error_dataset = None
 
+    if main is True:
+        looping = np.arange(4)
+    else:
+        looping = np.arange(4, 6)
+
     # First-level model training. Will train parallel so there will be another training going 
     # on at another vm, then it will upload to google cloud bucket, then main point will fetch it from
     # gcp bucket and use it. 
-    for i in range(4):
+    for i in looping:
         start = i * 50
         stop = (i + 1) * 50
 
@@ -75,10 +82,39 @@ if __name__ == "__main__":
                np.array(train_losses))
         np.savetxt(project_dir / f'outputs/val_losses_{i}.txt', np.array(val_losses))
         np.savetxt(project_dir / f'outputs/val_scores_{i}.txt', np.array(val_scores))
-        torch.save(baseline, project_dir / f'outputs/model_state_{i}.pt')
+        torch.save(baseline, project_dir / f'model/model_state_{i}.pt')
 
 
     if main is True:
-        # Run the second layer model training. 
+        # First, calculate the errors on the TRAINING dataset. 
+        # Ideally, they will be saved into one .csv file since we are flattening it anyways. 
 
-        pass
+        dataset_train_eval = ArielMLDataset(lc_train_path, shuffle=False, transform=simple_transform)
+
+        # If the below don't run, please SET BATCH SIZE TO 1. 
+        loader_train_eval = DataLoader(dataset_train_eval, batch_size=500, shuffle=False)
+
+        train_eval_df = pd.DataFrame()
+        baselines = np.array([torch.load(path_) for path_ in glob.glob("./model/*.pt")])
+
+        for k, item in tqdm.tqdm(enumerate(loader_train_eval)):  # I actually don't know why enum here
+            y_true = np.array(item["target"])
+
+            pred = []
+
+            for baseline in baselines:
+                y_pred = np.array(baseline(item["lc"]))
+            
+                # difference error
+                abs_error = y_pred - y_true  # we are not finding the absolute error here. Just "difference". 
+
+                pred += abs_error
+
+            train_eval_df[item["filename"]] = np.array(pred).flatten()
+
+        train_eval_df.to_csv("./outputs/train_errors.csv", header=False, sep=",", index=False)
+
+
+        # Start preparation for training second layer model. 
+
+        

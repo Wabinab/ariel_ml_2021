@@ -88,7 +88,8 @@ class ArielMLDataset(Dataset):
         else:
             target = torch.Tensor()
         return {'lc': lc.to(self.device),
-                'target': target.to(self.device)}
+                'target': target.to(self.device), 
+                'filename': file_without_dottxt}
 
 
 def simple_transform(x):
