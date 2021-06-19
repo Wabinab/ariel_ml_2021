@@ -1,7 +1,7 @@
 """Define and train the baseline model"""
 import numpy as np
 import torch
-from utils import ArielMLDataset, BaselineConv, ChallengeMetric, Baseline, simple_transform
+from utils import ArielMLDataset, BaselineLSTM, ChallengeMetric, Baseline, simple_transform
 from torch.utils.data.dataloader import DataLoader
 from torch.nn import MSELoss
 from torch.optim import Adam
@@ -16,16 +16,21 @@ __email__ = "mario.morvan.18@ucl.ac.uk"
 project_dir = pathlib.Path(__file__).parent.absolute()
 
 # paths to data dirs
-lc_train_path = project_dir / \
-    "/home/chowjunwei37/Documents/data/training_set/noisy_train"
-params_train_path = project_dir / \
-    "/home/chowjunwei37/Documents/data/training_set/params_train"
+# lc_train_path = project_dir / \
+#     "/home/chowjunwei37/Documents/data/training_set/noisy_train"
+# params_train_path = project_dir / \
+#     "/home/chowjunwei37/Documents/data/training_set/params_train"
 
-prefix = "5"
+lc_train_path = project_dir / \
+     "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/noisy_train"
+params_train_path = project_dir / \
+     "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
+
+prefix = "11"
 
 # training parameters
-train_size = 120000
-val_size = 5600
+train_size = 600
+val_size = 500
 epochs = 40
 save_from = 20
 
@@ -44,7 +49,7 @@ def train(batch_size, dataset_train, dataset_val):
 
     # Define baseline model
     # baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
-    baseline = BaselineConv().double().to(device)
+    baseline = BaselineLSTM().double().to(device)
 
     # Define Loss, metric and optimizer
     loss_function = MSELoss()
@@ -116,7 +121,7 @@ if __name__ == '__main__':
 
     # Loaders
     # batch_size = int(train_size / 4)
-    batch_size = 100
+    batch_size = 55
     
     train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val)
     
