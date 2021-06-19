@@ -1,6 +1,7 @@
 """Define and train the baseline model"""
 import numpy as np
 import torch
+from torch._C import device
 from utils import ArielMLDataset, BaselineLSTM, ChallengeMetric, Baseline, simple_transform
 from torch.utils.data.dataloader import DataLoader
 from torch.nn import MSELoss
@@ -38,18 +39,20 @@ save_from = 20
 H1 = 256
 H2 = 1024
 H3 = 256
+H_LSTM = 512
 
 
 # -------------------------------------------------
 
-def train(batch_size, dataset_train, dataset_val):
+def train(batch_size, dataset_train, dataset_val, device):
+
     loader_train = DataLoader(
         dataset_train, batch_size=batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, batch_size=batch_size)
 
     # Define baseline model
     # baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
-    baseline = BaselineLSTM().double().to(device)
+    baseline = BaselineLSTM(hidden_dim=H_LSTM, batch_size=batch_size, device=device).double().to(device)
 
     # Define Loss, metric and optimizer
     loss_function = MSELoss()
@@ -70,7 +73,7 @@ def train(batch_size, dataset_train, dataset_val):
         baseline.train()
 
         for k, item in tqdm(enumerate(loader_train)):
-            pred = baseline(item['lc'])
+            pred, _ = baseline(item['lc'])
             loss = loss_function(item['target'], pred)
             opt.zero_grad()
             loss.backward()
@@ -80,7 +83,7 @@ def train(batch_size, dataset_train, dataset_val):
         baseline.eval()
 
         for k, item in tqdm(enumerate(loader_val)):
-            pred = baseline(item['lc'])
+            pred, _ = baseline(item['lc'])
             loss = loss_function(item['target'], pred)
             score = challenge_metric.score(item['target'], pred)
             val_loss += loss.detach().item()
@@ -106,7 +109,7 @@ def train(batch_size, dataset_train, dataset_val):
 
 # -------------------------------------------------
 
-if __name__ == '__main__':
+def main():
     if torch.cuda.is_available():
         device = 'cuda'
     else:
@@ -114,19 +117,26 @@ if __name__ == '__main__':
 
     # Training
     dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
-                                   max_size=train_size, transform=simple_transform, device=device)
+                                max_size=train_size, transform=simple_transform, device=device,
+                                transpose=True)
     # Validation
     dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
-                                 max_size=val_size, transform=simple_transform, device=device)
+                                max_size=val_size, transform=simple_transform, device=device,
+                                transpose=True)
 
     # Loaders
     # batch_size = int(train_size / 4)
-    batch_size = 55
+    batch_size = 100
     
-    train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val)
+    train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, device)
     
     np.savetxt(project_dir / f'outputs/train_losses_{prefix}.txt',
-               np.array(train_losses))
+            np.array(train_losses))
     np.savetxt(project_dir / f'outputs/val_losses_{prefix}.txt', np.array(val_losses))
     np.savetxt(project_dir / f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
     torch.save(baseline, project_dir / f'outputs/model_state_{prefix}.pt')
+
+
+if __name__ == '__main__':
+    main()
+
