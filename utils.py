@@ -1,4 +1,5 @@
 """Define generic classes and functions to facilitate baseline construction"""
+import copy
 import itertools
 import os
 import numpy as np
@@ -72,8 +73,6 @@ class ArielMLDataset(Dataset):
         lc = np.loadtxt(item_lc_path)
         lc = lc[:, self.start:self.stop]
 
-        lc = torch.from_numpy(lc)
-
         if self.transform:  # Transform first so we don't have to worry about how to do for error.
             lc = self.transform(lc)
 
@@ -83,6 +82,8 @@ class ArielMLDataset(Dataset):
             file_without_dottxt = str(self.files[idx]).split(".")[0]
             error_numpy = np.array( self.error_dataset[file_without_dottxt] )
             lc = np.append(lc, error_numpy)
+
+        lc = torch.from_numpy(lc)  
 
         if self.params_path is not None:
             item_params_path = Path(self.params_path) / self.files[idx]
@@ -102,7 +103,10 @@ def simple_transform(x):
         preprocessed array
     """
     ##preprocessing##
-    out = x.clone()
+    try:
+        out = x.clone()
+    except Exception:
+        out = copy.deepcopy(x)  # Is this memory efficient? 
 
 
     # rand_array = np.random.rand(55 * 300)
