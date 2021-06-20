@@ -17,6 +17,10 @@ import pathlib
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
+import threading
+from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
+
 
 project_dir = pathlib.Path(__file__).parent.absolute()
 
@@ -44,6 +48,33 @@ n_timesteps = 300
 n_wavelengths = 55
 
 main = True
+
+def inner_pred(f):
+    baseline = f[0]
+    start = f[1]
+    train_eval_df = pd.DataFrame()
+
+    dataset_train_eval = ArielMLDataset(lc_train_path, params_train_path, shuffle=False, transform=simple_transform,
+                            start=start, stop=50 + start)
+
+    # If the below don't run, please SET BATCH SIZE TO 1. 
+    loader_train_eval = DataLoader(dataset_train_eval, batch_size=batch_size, shuffle=False)
+
+    for k, item in tqdm(enumerate(loader_train_eval)):  # I actually don't know why enum here
+        y_true = np.array(item["target"])
+
+        y_pred = baseline(item["lc"]).detach().numpy()  # Very inefficient way to detach all the time? 
+    
+        # difference error
+        assert y_true.shape == (batch_size, 55)
+        assert y_pred.shape == (batch_size, 55)
+        abs_error = y_pred - y_true  # we are not finding the absolute error here. Just "difference". 
+        
+        file = str(files[k]).split(".")[0]
+        train_eval_df[file] = np.array([abs_error]).flatten()
+
+    train_eval_df.to_csv(f"./outputs/train_errors_{start}.csv", header=True, sep=",", index=False)
+
 
 
 if __name__ == "__main__":
@@ -114,48 +145,32 @@ if __name__ == "__main__":
         # First, calculate the errors on the TRAINING dataset. 
         # Ideally, they will be saved into one .csv file since we are flattening it anyways. 
 
-        baselines = np.array([ torch.load(path_) for path_ in sorted(glob.glob("./model/*.pt")) ])
+        baselines = [ torch.load(path_) for path_ in sorted(glob.glob("./model/*.pt")) ]
+        starts = [0, 50, 100, 150, 200, 250]
 
         files = sorted(
             [p for p in os.listdir(lc_train_path) if p.endswith('txt')])
 
-        start = 0
-        batch_size = 500
+        batch_size = 1000
         torch.set_num_threads(os.cpu_count() // 2)
-        torch.set_num_interop_threads(os.cpu_count() - 2)
+        torch.set_num_interop_threads(os.cpu_count() // 2)
+
+
+        # Working on errors
         
-        for baseline in baselines:
-            train_eval_df = pd.DataFrame()
+        with ThreadPoolExecutor(os.cpu_count()) as ex:  # Actually seems slower but oh well. 
+        # with Pool(6) as ex:
+            ex.map(inner_pred, [*zip(baselines, starts)])
 
-            dataset_train_eval = ArielMLDataset(lc_train_path, params_train_path, shuffle=False, transform=simple_transform,
-                                    start=start, stop=50 + start)
-
-            # If the below don't run, please SET BATCH SIZE TO 1. 
-            loader_train_eval = DataLoader(dataset_train_eval, batch_size=batch_size, shuffle=False)
-
-            for k, item in tqdm(enumerate(loader_train_eval)):  # I actually don't know why enum here
-                y_true = np.array(item["target"])
-
-                y_pred = baseline(item["lc"]).detach().numpy()  # Very inefficient way to detach all the time? 
-            
-                # difference error
-                assert y_true.shape == (batch_size, 55)
-                assert y_pred.shape == (batch_size, 55)
-                abs_error = y_pred - y_true  # we are not finding the absolute error here. Just "difference". 
-                
-                file = str(files[k]).split(".")[0]
-                train_eval_df[file] = np.array([abs_error]).flatten()
-            
-            start += 50
-
-            train_eval_df.to_csv(f"./outputs/train_errors_{start}.csv", header=False, sep=",", index=False)
-
+        print("Done Working on errors")
+        
         # Combine csv files
         train_errors = sorted(glob.glob("./outputs/train_errors_*.csv"))
         train_eval_df = pd.DataFrame()
 
         for train_error in train_errors:
-            train_eval_df = pd.concat([train_eval_df, train_errors], axis=0)
+            our_df = pd.read_csv(train_error, header=True, sep=",")
+            train_eval_df = pd.concat([train_eval_df, our_df], axis=0)
 
         assert train_eval_df.shape == (55 * 6, 125600)
 
