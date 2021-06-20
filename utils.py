@@ -332,6 +332,7 @@ class BaselineConv(Module):
 #         return self.fc(lstm_out)
 
 ##########################
+
 class BaselineLSTM(torch.nn.Module) :   ## is probably 55,batch,300    #need 300,batch,55 or batch,300,55
     def __init__(self,hidden_dim,batch_size,input_dim=55,
             output_dim=55,num_layers=2,device="cpu",h0=None,c0=None):

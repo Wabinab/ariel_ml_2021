@@ -9,6 +9,8 @@ from torch.optim import Adam
 # from torch.multiprocessing import Pool, Process, set_start_method
 from tqdm import tqdm
 import pathlib
+import os
+import glob
 
 
 __author__ = "Mario Morvan"
@@ -17,23 +19,23 @@ __email__ = "mario.morvan.18@ucl.ac.uk"
 project_dir = pathlib.Path(__file__).parent.absolute()
 
 # paths to data dirs
-# lc_train_path = project_dir / \
-#     "/home/chowjunwei37/Documents/data/training_set/noisy_train"
-# params_train_path = project_dir / \
-#     "/home/chowjunwei37/Documents/data/training_set/params_train"
-
 lc_train_path = project_dir / \
-     "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/noisy_train"
+    "/home/chowjunwei37/Documents/data/training_set/noisy_train"
 params_train_path = project_dir / \
-     "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
+    "/home/chowjunwei37/Documents/data/training_set/params_train"
 
-prefix = "11"
+# lc_train_path = project_dir / \
+#      "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/noisy_train"
+# params_train_path = project_dir / \
+#      "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
+
+prefix = "lstm"
 
 # training parameters
-train_size = 600
-val_size = 500
+train_size = 120000
+val_size = 5600
 epochs = 40
-save_from = 20
+save_from = 1
 
 # hyper-parameters
 H1 = 256
@@ -58,6 +60,20 @@ def train(batch_size, dataset_train, dataset_val, device):
     loss_function = MSELoss()
     challenge_metric = ChallengeMetric()
     opt = Adam(baseline.parameters())
+
+    try:
+        temp = glob.glob("outputs/model_continue_train*.pt")
+        ckpt = torch.load(temp[0])
+
+        curr_epoch = ckpt["epoch"]
+        baseline.load_state_dict(ckpt["state_dict"])
+        opt.load_state_dict(ckpt["opt"])
+
+        print(f"Confirm loaded state dict at epoch {curr_epoch}.")
+    except Exception:
+        curr_epoch = 1
+
+        print("Failed to load state dict or it did not exist. Training from scratch.")
 
     # Lists to record train and val scores
     train_losses = []
@@ -100,8 +116,18 @@ def train(batch_size, dataset_train, dataset_val, device):
         val_losses += [val_loss]
         val_scores += [val_score]
 
+        np.savetxt(project_dir / f'outputs/train_losses_{prefix}.txt',
+            np.array(train_losses))
+        np.savetxt(project_dir / f'outputs/val_losses_{prefix}.txt', np.array(val_losses))
+        np.savetxt(project_dir / f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
+
         if epoch >= save_from and val_score > best_val_score:
             best_val_score = val_score
+            torch.save({
+                "epoch": epoch,
+                "state_dict": baseline.state_dict(),
+                "opt": opt.state_dict(),
+            }, f"outputs/model_continue_train_{prefix}.pt")
             torch.save(baseline, project_dir / f'outputs/model_state_{prefix}.pt')
 
     return train_losses, val_losses, val_scores, baseline
@@ -114,6 +140,10 @@ def main():
         device = 'cuda'
     else:
         device = 'cpu'
+
+    # torch.set_num_interop_threads(os.cpu_count() - 2)
+    torch.set_num_threads(os.cpu_count() - 1)
+
 
     # Training
     dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
