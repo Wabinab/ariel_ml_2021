@@ -1,4 +1,9 @@
 program: train_third.py
+command:
+  - ${env}
+  - python3
+  - ${program}
+  - ${args}
 method: bayes
 metric: 
   goal: maximize

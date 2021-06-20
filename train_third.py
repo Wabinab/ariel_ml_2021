@@ -3,7 +3,7 @@ Training files compiled-ready for sending to GCP Vertex AI.
 Created on: 11 June 2021.
 """
 import argparse
-import hypertune
+# import hypertune
 import numpy as np
 import pathlib
 import sys
@@ -63,7 +63,7 @@ def train(args, dataset_train, dataset_val, device):
     # Lists to record train and val scores
     val_scores = []
 
-    for epoch in range(1, 1+2):  # 2 epochs hardcoded
+    for epoch in range(1, 1+25):  # 2 epochs hardcoded
         val_score = 0
         baseline.train()
 
@@ -84,7 +84,7 @@ def train(args, dataset_train, dataset_val, device):
         val_score /= len(loader_val)
         val_scores += [val_score]
 
-        wandb.log(val_scores)
+        wandb.log({"ariel_score": val_scores})
 
 
 def main():
