@@ -14,6 +14,7 @@ from torch.optim import Adam
 # from torch.multiprocessing import Pool, Process, set_start_method
 from tqdm import tqdm
 import pathlib
+import pandas as pd
 from sklearn.metrics import mean_squared_error
 
 
@@ -30,7 +31,7 @@ prefix = "50"
 # training parameters
 train_size = 120000
 val_size = 5600
-epochs = 10
+epochs = 15
 save_from = 5
 
 # hyper-parameters
@@ -50,6 +51,7 @@ if __name__ == "__main__":
         device = "cuda"
     else:
         device = "cpu"
+        torch.set_num_threads(os.cpu_count() - 1)
 
     error_dataset = None
 
@@ -62,31 +64,41 @@ if __name__ == "__main__":
     # on at another vm, then it will upload to google cloud bucket, then main point will fetch it from
     # gcp bucket and use it. 
     for i in looping:
-        start = i * 50
-        stop = (i + 1) * 50
 
-        print("Training range: ", start, " ", stop)
+        if not os.path.exists(f"model/model_state_{i}.pt"):
 
-        dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
-                                   max_size=train_size, transform=simple_transform, device=device,
-                                   start=start, stop=stop)
+            start = i * 50
+            stop = (i + 1) * 50
 
-        dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
-                                 max_size=val_size, transform=simple_transform, device=device,
-                                 start=start, stop=stop)
+            print("Training range: ", start, " ", stop)
 
-        batch_size = 50
+            dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
+                                    max_size=train_size, transform=simple_transform, device=device,
+                                    start=start, stop=stop)
 
-        baseline = Baseline(H1=H1, H2=H2, H3=H3, input_dim=abs(start - stop) * n_wavelengths).double().to(device)
+            dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
+                                    max_size=val_size, transform=simple_transform, device=device,
+                                    start=start, stop=stop)
 
-        train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
-                                                                epochs, save_from)
+            batch_size = 50
 
-        np.savetxt(project_dir / f'outputs/train_losses_{i}.txt',
-               np.array(train_losses))
-        np.savetxt(project_dir / f'outputs/val_losses_{i}.txt', np.array(val_losses))
-        np.savetxt(project_dir / f'outputs/val_scores_{i}.txt', np.array(val_scores))
-        torch.save(baseline, project_dir / f'model/model_state_{i}.pt')
+            baseline = Baseline(H1=H1, H2=H2, H3=H3, input_dim=abs(start - stop) * n_wavelengths).double().to(device)
+
+            train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
+                                                                    epochs, save_from)
+
+            # -------------------------------------
+            # Forgot to pass "save_folder" as a str, now it is not gonna save properly
+            # -------------------------------------
+
+            np.savetxt(project_dir / f'outputs/train_losses_{i}.txt',
+                np.array(train_losses))
+            np.savetxt(project_dir / f'outputs/val_losses_{i}.txt', np.array(val_losses))
+            np.savetxt(project_dir / f'outputs/val_scores_{i}.txt', np.array(val_scores))
+            torch.save(baseline, project_dir / f'model/model_state_{i}.pt')
+
+        else:
+            print("Skipping model ", i)
 
 
     # ----------------------------------------
@@ -96,7 +108,7 @@ if __name__ == "__main__":
     # ----------------------------------------
 
 
-    if main is True:
+    if main is True and len(os.listdir("model")) >= 6:
         # Before first, we need to download the files from gcp
         os.system("gsutil -m cp -r gs://arielml_data/trained_model/20062021/*.pt ./model/")
 
@@ -114,7 +126,7 @@ if __name__ == "__main__":
         files = sorted(
             [p for p in os.listdir(lc_train_path) if p.endswith('txt')])
 
-        for k, item in tqdm.tqdm(enumerate(loader_train_eval)):  # I actually don't know why enum here
+        for k, item in tqdm(enumerate(loader_train_eval)):  # I actually don't know why enum here
             y_true = np.array(item["target"])
 
             pred = []
@@ -153,7 +165,7 @@ if __name__ == "__main__":
         baseline = Baseline(H1=256, H2=1024, H3=1024, H4=256, input_dim=total_length, model_num=2).double().to(device)
 
         train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
-                                                                epochs, save_from)
+                                                                20, save_from)
 
         prefix = "finale"
 
