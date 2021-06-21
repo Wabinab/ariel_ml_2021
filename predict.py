@@ -36,37 +36,43 @@ def main():
 
     # For first layer prediction. 
     for model_name in sorted(glob.glob("model/*.pt")):
+
         start = int(model_name[-4])
 
-        dataset_eval = ArielMLDataset(lc_test_path, shuffle=False, transform=simple_transform, start=start * 50, stop=(start + 1) * 50)
+        if not os.path.exists(f"{model_name[:-3]}.csv"):
 
-        loader_eval = DataLoader(dataset_eval, batch_size=1000, shuffle=False)
+            dataset_eval = ArielMLDataset(lc_test_path, shuffle=False, transform=simple_transform, start=start * 50, stop=(start + 1) * 50)
 
-        baseline = Baseline(input_dim=50 * n_wavelengths).double().to(device)
+            loader_eval = DataLoader(dataset_eval, batch_size=250, shuffle=False, num_workers=os.cpu_count() // 2)
 
-        baseline = torch.load(model_name)
-        baseline.eval() 
+            baseline = Baseline(input_dim=50 * n_wavelengths).double().to(device)
 
-        for k, item in tqdm.tqdm(enumerate(loader_eval)):
+            baseline = torch.load(model_name)
+            baseline.eval() 
 
-            pred = pd.DataFrame(baseline(item['lc']).detach().numpy())
+            for k, item in tqdm.tqdm(enumerate(loader_eval)):
 
-            pred.to_csv(f"{model_name[:-3]}.csv", mode="a", header=None, index=False, sep="\t")
+                pred = pd.DataFrame(baseline(item['lc']).detach().numpy())
 
-            del pred
-            
-            if k % 10 == 0:
-                gc.collect()
+                pred.to_csv(f"{model_name[:-3]}.csv", mode="a", header=None, index=False, sep="\t")
 
-        print(f"Finish with {model_name}.")
+                del pred
+                
+                if k % 10 == 0:
+                    gc.collect()
 
-    os.system("gsutil cp -r model/* gs://arielml_data/trained_model/20062021/")
+            print(f"Finish with {model_name}.")
+
+        else:
+            print(f"Skipping {model_name} as its csv already exists.")
+
+    os.system("gsutil -m cp -r model/* gs://arielml_data/trained_model/20062021/")
 
     # For second layer prediction.
     test_eval_df = pd.DataFrame()
     test_errors = sorted(glob.glob("./model/*.csv"))
 
-    for test_error in tqdm(test_errors):
+    for test_error in tqdm.tqdm(test_errors):
         our_df = pd.read_csv(test_error, header=None, sep="\t").T
         test_eval_df = pd.concat([test_eval_df, our_df], axis=0)
 
@@ -76,7 +82,7 @@ def main():
 
     dataset_eval = ArielMLDataset(lc_test_path, shuffle=False, transform=simple_transform, error_dataset=test_eval_df)
 
-    loader_eval = DataLoader(dataset_eval, batch_size=1000, shuffle=False)
+    loader_eval = DataLoader(dataset_eval, batch_size=250, shuffle=False, num_workers=os.cpu_count() // 2)
 
     total_length = (n_timesteps * n_wavelengths) + (55 * 6)
     baseline = Baseline(input_dim=total_length, model_num=2).double().to(device)
@@ -101,7 +107,7 @@ def main():
 
     print(f"Finish with final prediction.")
 
-    os.system("gsutil cp -r outputs/baseline_pred*.txt gs://arielml_data/trained_model/20062021/")
+    os.system("gsutil -m cp -r outputs/baseline_pred*.txt gs://arielml_data/trained_model/20062021/")
 
     
 
