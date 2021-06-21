@@ -31,16 +31,6 @@ def main():
     n_wavelengths = 55
 
     lc_test_path = "/home/chowjunwei37/Documents/data/test_set/noisy_test"
-
-    dataset = ArielMLDataset(lc_train_path, params_train_path, shuffle=True)
-
-    idx = np.random.randint(len(dataset))
-    item = dataset[idx]
-    offsets = np.linspace(-0.05, 0.05, item['lc'].shape[0])
-    f, ax = plt.subplots(figsize=(13,9))
-    plt.plot(item['lc'].T.detach().numpy() + offsets , label=None)
-    ax.legend([round(x, 4) for x in item['target'].detach().numpy()], fontsize=6, loc='lower right')
-    plt.savefig("saved_fig.png", dpi=500)
     
     challenge_metric = ChallengeMetric()
 
@@ -52,7 +42,7 @@ def main():
 
         loader_eval = DataLoader(dataset_eval, batch_size=1000, shuffle=False)
 
-        baseline = Baseline(input_dim=abs(start - stop) * n_wavelengths).double().to(device)
+        baseline = Baseline(input_dim=50 * n_wavelengths).double().to(device)
 
         baseline = torch.load(model_name)
         baseline.eval() 
