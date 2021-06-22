@@ -82,7 +82,7 @@ def main():
 
     dataset_eval = ArielMLDataset(lc_test_path, shuffle=False, transform=simple_transform, error_dataset=test_eval_df)
 
-    loader_eval = DataLoader(dataset_eval, batch_size=250, shuffle=False, num_workers=os.cpu_count() // 2)
+    loader_eval = DataLoader(dataset_eval, batch_size=250, shuffle=False, num_workers=os.cpu_count() - 1)
 
     total_length = (n_timesteps * n_wavelengths) + (55 * 6)
     baseline = Baseline(input_dim=total_length, model_num=2).double().to(device)
@@ -94,11 +94,14 @@ def main():
     baseline = torch.load("outputs/model_state_stacking.pt")
     baseline.eval()
 
+    if os.path.exists("outputs/baseline_predict_stacking_NOTFORUPLOAD.txt"):
+        os.remove("outputs/baseline_predict_stacking_NOTFORUPLOAD.txt")
+
     for k, item in tqdm.tqdm(enumerate(loader_eval)):
         
         pred = pd.DataFrame(baseline(item["lc"]).detach().numpy())
 
-        pred.to_csv(f"outputs/baseline_predict_stacking.txt", mode="a", header=None, index=False, sep="\t")
+        pred.to_csv(f"outputs/baseline_predict_stacking_NOTFORUPLOAD.txt", mode="a", header=None, index=False, sep="\t")
 
         del pred
 

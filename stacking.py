@@ -18,6 +18,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 
 import threading
+import gc
 from multiprocessing import Pool
 from concurrent.futures import ThreadPoolExecutor
 
@@ -35,7 +36,7 @@ prefix = "stacking"
 # training parameters
 train_size = 120000
 val_size = 5600
-epochs = 15
+epochs = 30
 save_from = 3
 
 # hyper-parameters
@@ -50,7 +51,7 @@ n_wavelengths = 55
 main = True
 
 def inner_pred(f):
-    baseline = f[0]
+    model_name = f[0]
     start = f[1]
     train_eval_df = pd.DataFrame()
     batch_size = 1000
@@ -59,22 +60,25 @@ def inner_pred(f):
                             start=start, stop=50 + start)
 
     # If the below don't run, please SET BATCH SIZE TO 1. 
-    loader_train_eval = DataLoader(dataset_train_eval, batch_size=batch_size, shuffle=False)
+    loader_train_eval = DataLoader(dataset_train_eval, batch_size=batch_size, shuffle=False, num_workers=os.cpu_count() // 2)
 
-    for k, item in tqdm(enumerate(loader_train_eval)):  # I actually don't know why enum here
-        y_true = np.array(item["target"])
+    baseline = Baseline(input_dim=50 * n_wavelengths).double().to(device)
 
-        y_pred = baseline(item["lc"]).detach().numpy()  # Very inefficient way to detach all the time? 
-    
-        # difference error
-        assert y_true.shape == (batch_size, 55)
-        assert y_pred.shape == (batch_size, 55)
-        abs_error = y_pred - y_true  # we are not finding the absolute error here. Just "difference". 
+    baseline = torch.load(model_name)
+    baseline.eval()
+
+    for k, item in tqdm.tqdm(enumerate(loader_train_eval)):
+
+        pred = pd.DataFrame(baseline(item['lc']).detach().numpy())
+
+        pred.to_csv(f"{model_name[:-3]}.csv", mode="a", header=None, index=False, sep="\t")
+
+        del pred
         
-        file = str(files[k]).split(".")[0]
-        train_eval_df[file] = np.array([abs_error]).flatten()
+        if k % 10 == 0:
+            gc.collect()
 
-    train_eval_df.to_csv(f"./outputs/train_errors_{start}.csv", header=True, sep=",", index=False)
+    print(f"Finish with {model_name}.")
 
 
 
@@ -146,7 +150,7 @@ if __name__ == "__main__":
         # First, calculate the errors on the TRAINING dataset. 
         # Ideally, they will be saved into one .csv file since we are flattening it anyways. 
 
-        baselines = [ torch.load(path_) for path_ in sorted(glob.glob("./model/*.pt")) ]
+        baselines = [ path_ for path_ in sorted(glob.glob("./model/*.pt")) ]
         starts = [0, 50, 100, 150, 200, 250]
 
         files = sorted(
@@ -168,6 +172,9 @@ if __name__ == "__main__":
         #     ex.map(inner_pred, [*zip(baselines, starts)])
 
         # print("Done Working on errors")
+
+        for f in zip(baselines, starts):
+            inner_pred(f)
         
         # Combine csv files
         train_errors = sorted(glob.glob("./outputs/train_error_*.csv"))
@@ -199,7 +206,7 @@ if __name__ == "__main__":
         baseline = Baseline(H1=256, H2=1024, H3=1024, H4=256, input_dim=total_length, model_num=2).double().to(device)
 
         train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
-                                                                30, save_from)
+                                                                50, save_from)
 
         np.savetxt(project_dir / f'outputs/train_losses_{prefix}.txt',
                np.array(train_losses))
