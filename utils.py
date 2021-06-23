@@ -370,4 +370,4 @@ class BaselineLSTM(torch.nn.Module) :   ## is probably 55,batch,300    #need 300
         y = self.dropout(y)
         lstm_out, self.hidden = self.lstm(y, (h,c))
         lstm_out = self.fc(lstm_out[:,-1,:])
-        return lstm_out, self.hidden
+        return lstm_out #, self.hidden
