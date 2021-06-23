@@ -385,7 +385,10 @@ class BaselineLSTMAlt(torch.nn.Module):
         '''
             # torch.Size([100, 55, 300]) Transpose False. 
             # torch.Size([100, 300, 55]) Transpose True.    Want this
-        super(BaselineLSTM, self).__init__()
+        super(BaselineLSTMAlt, self).__init__()
+
+        self.batch_size = batch_size
+
         if h0 == None:
             self.h0 = torch.zeros(2*num_layers, batch_size, hidden_dim,device=device).double() 
             self.c0 = torch.zeros(2*num_layers, batch_size, hidden_dim,device=device).double() 
@@ -395,6 +398,8 @@ class BaselineLSTMAlt(torch.nn.Module):
         
         self.hidden = None
         self.input_dim = input_dim
+        self.cnn = torch.nn.Conv1d(in_channels=new_input_dim // input_dim, out_channels=2*hidden_dim, kernel_size=input_dim, stride=2)
+        self.act_cnn = torch.nn.ReLU()
         self.lstm = torch.nn.LSTM(input_size=input_dim,
                             hidden_size=hidden_dim,
                             num_layers=2,
@@ -403,16 +408,16 @@ class BaselineLSTMAlt(torch.nn.Module):
                             # dropout=0.1)
         # self.dropout = torch.nn.Dropout(p=0.1)
 
-        self.layer1 = torch.nn.Linear(new_input_dim, H1)
-        self.act1 = torch.nn.ReLU()
-        self.layer2 = torch.nn.Linear(H1, H2)
-        self.act2 = torch.nn.ReLU()
+        # Out from LSTM
+        self.fc_lstm = torch.nn.Linear(2*hidden_dim, H2)
+        self.act_lstm = torch.nn.ReLU()
 
-
-        self.fc = torch.nn.Linear(2*hidden_dim,H2)
-        self.actfc = torch.nn.ReLU()
-        self.layer3 = torch.nn.ReLU(H2, H1)
-        self.act3 = torch.nn.ReLu()
+        # Out from CNN
+        self.fc_cnn = torch.nn.Linear(2 * hidden_dim, H2)
+        self.act_cnn_out = torch.nn.ReLU()
+        
+        self.comb = torch.nn.Linear(H2, H1)
+        self.act_comb = torch.nn.ReLU()
         self.final = torch.nn.Linear(H1, output_dim)
 
     def forward(self, y, h = None, c = None):
@@ -420,18 +425,26 @@ class BaselineLSTMAlt(torch.nn.Module):
             h = self.h0
             c = self.c0
 
-        out = torch.flatten(
-            y, start_dim=1)
-        out = self.layer1(out)
-        out = self.act1(out)
-        out = self.layer2(out)
-        out = self.act2(out)
-        out = torch.reshape(out, (-1, -1, self.input_dim))
+        # LSTM line
+        lstm_out, self.hidden = self.lstm(y, (h,c))
+        lstm_out = self.fc_lstm(lstm_out[:,-1,:])
+        lstm_out = self.act_lstm(lstm_out)
 
-        lstm_out, self.hidden = self.lstm(out, (h,c))
-        lstm_out = self.fc(lstm_out[:,-1,:])
-        lstm_out = self.actfc(lstm_out)
-        lstm_out = self.layer3(lstm_out)
-        lstm_out = self.act3(lstm_out)
-        lstm_out = self.final(lstm_out)
-        return lstm_out #, self.hidden
+
+        # Convolution line
+        cnn_out = torch.reshape(y, (-1 ,n_timesteps, self.input_dim))
+        cnn_out = self.cnn(cnn_out)
+        cnn_out = self.act_cnn(cnn_out)
+        cnn_out = torch.flatten(cnn_out, start_dim=1)
+        cnn_out = self.fc_cnn(cnn_out)
+        cnn_out = self.act_cnn_out(cnn_out)
+
+
+        # Combination
+        combined_out = lstm_out + cnn_out
+        combined_out = self.comb(combined_out)
+        combined_out = self.act_comb(combined_out)
+        combined_out = self.final(combined_out)
+
+
+        return combined_out #, self.hidden

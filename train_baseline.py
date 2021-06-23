@@ -2,7 +2,7 @@
 import numpy as np
 import torch
 from torch._C import device
-from utils import ArielMLDataset, BaselineLSTM, ChallengeMetric, Baseline, simple_transform
+from utils import ArielMLDataset, BaselineLSTMAlt, ChallengeMetric, Baseline, simple_transform
 from torch.utils.data.dataloader import DataLoader
 from torch.nn import MSELoss
 from torch.optim import Adam
@@ -29,7 +29,7 @@ params_train_path = project_dir / \
 # params_train_path = project_dir / \
 #      "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
 
-prefix = "lstm_dropout"
+prefix = "alt_lstm"
 
 # training parameters
 train_size = 120000
@@ -38,10 +38,14 @@ epochs = 40
 save_from = 1
 
 # hyper-parameters
+# H1 = 256
+# H2 = 1024
+# H3 = 256
+# H_LSTM = 512
+
 H1 = 256
-H2 = 1024
-H3 = 256
-H_LSTM = 512
+H2 = 512
+H_LSTM = 128
 
 
 # -------------------------------------------------
@@ -54,7 +58,7 @@ def train(batch_size, dataset_train, dataset_val, device):
 
     # Define baseline model
     # baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
-    baseline = BaselineLSTM(hidden_dim=H_LSTM, batch_size=batch_size, device=device).double().to(device)
+    baseline = BaselineLSTMAlt(H_LSTM, H1, H2, batch_size=batch_size, device=device).double().to(device)
 
     # Define Loss, metric and optimizer
     loss_function = MSELoss()
@@ -89,7 +93,7 @@ def train(batch_size, dataset_train, dataset_val, device):
         baseline.train()
 
         for k, item in tqdm(enumerate(loader_train)):
-            pred, _ = baseline(item['lc'])
+            pred = baseline(item['lc'])
             loss = loss_function(item['target'], pred)
             opt.zero_grad()
             loss.backward()
@@ -99,7 +103,7 @@ def train(batch_size, dataset_train, dataset_val, device):
         baseline.eval()
 
         for k, item in tqdm(enumerate(loader_val)):
-            pred, _ = baseline(item['lc'])
+            pred = baseline(item['lc'])
             loss = loss_function(item['target'], pred)
             score = challenge_metric.score(item['target'], pred)
             val_loss += loss.detach().item()
@@ -142,7 +146,7 @@ def main():
         device = 'cpu'
 
     # torch.set_num_interop_threads(os.cpu_count() - 2)
-    torch.set_num_threads(os.cpu_count() - 2)
+    torch.set_num_threads(os.cpu_count() - 1)
     # torch.set_num_threads(15)
 
 
