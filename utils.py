@@ -358,16 +358,16 @@ class BaselineLSTM(torch.nn.Module) :   ## is probably 55,batch,300    #need 300
                             hidden_size=hidden_dim,
                             num_layers=2,
                             batch_first=True,
-                            bidirectional=True)
-                            #dropout=0.1)
-        #self.dropout = torch.nn.Dropout(p=0.1)
+                            bidirectional=True,
+                            dropout=0.1)
+        self.dropout = torch.nn.Dropout(p=0.1)
         self.fc = torch.nn.Linear(2*hidden_dim,output_dim)
 
     def forward(self, y, h = None, c = None):
         if h==None:
             h = self.h0
             c = self.c0
-        #y = self.dropout(y)
+        y = self.dropout(y)
         lstm_out, self.hidden = self.lstm(y, (h,c))
         lstm_out = self.fc(lstm_out[:,-1,:])
         return lstm_out, self.hidden

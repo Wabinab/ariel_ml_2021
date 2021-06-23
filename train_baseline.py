@@ -29,7 +29,7 @@ params_train_path = project_dir / \
 # params_train_path = project_dir / \
 #      "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
 
-prefix = "lstm"
+prefix = "lstm_dropout"
 
 # training parameters
 train_size = 120000
@@ -142,7 +142,8 @@ def main():
         device = 'cpu'
 
     # torch.set_num_interop_threads(os.cpu_count() - 2)
-    torch.set_num_threads(os.cpu_count() - 1)
+    torch.set_num_threads(os.cpu_count() - 2)
+    # torch.set_num_threads(15)
 
 
     # Training
