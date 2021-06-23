@@ -34,7 +34,7 @@ prefix = "alt_lstm"
 # training parameters
 train_size = 120000
 val_size = 5600
-epochs = 40
+epochs = 70
 save_from = 1
 
 # hyper-parameters
@@ -161,7 +161,7 @@ def main():
 
     # Loaders
     # batch_size = int(train_size / 4)
-    batch_size = 100
+    batch_size = 50
     
     train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, device)
     
