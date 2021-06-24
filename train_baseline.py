@@ -37,14 +37,15 @@ H3 = 256
 
 # -------------------------------------------------
 
-def train(batch_size, dataset_train, dataset_val, baseline=None, epochs=10, save_from=5, prefix="stacking"):
+def train(batch_size, dataset_train, dataset_val, baseline=None, epochs=10, save_from=5, model_name='outputs/model_state_stacking.pt'):
     if torch.cuda.is_available():
         device = 'cuda'
     else:
         device = 'cpu'
     
-    loader_train = DataLoader(
-        dataset_train, batch_size=batch_size, shuffle=True)
+    # SEt num_workers to 0 or remove it if training fails. 
+    loader_train = DataLoader( 
+        dataset_train, batch_size=batch_size, shuffle=True, num_workers=2)
     loader_val = DataLoader(dataset_val, batch_size=batch_size)
 
     # Define baseline model
@@ -99,7 +100,7 @@ def train(batch_size, dataset_train, dataset_val, baseline=None, epochs=10, save
 
         if epoch >= save_from and val_score > best_val_score:
             best_val_score = val_score
-            torch.save(baseline, project_dir / f'outputs/model_state_{prefix}.pt')
+            torch.save(baseline, project_dir / model_name)
 
     return train_losses, val_losses, val_scores, baseline
 

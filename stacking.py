@@ -56,18 +56,21 @@ def inner_pred(f):
     train_eval_df = pd.DataFrame()
     batch_size = 1000
 
+    if os.path.exists(f"{model_name[:-3]}.csv"):
+        return None
+
     dataset_train_eval = ArielMLDataset(lc_train_path, params_train_path, shuffle=False, transform=simple_transform,
                             start=start, stop=50 + start)
 
     # If the below don't run, please SET BATCH SIZE TO 1. 
-    loader_train_eval = DataLoader(dataset_train_eval, batch_size=batch_size, shuffle=False, num_workers=os.cpu_count() // 2)
+    loader_train_eval = DataLoader(dataset_train_eval, batch_size=batch_size, shuffle=False)
 
     baseline = Baseline(input_dim=50 * n_wavelengths).double().to(device)
 
     baseline = torch.load(model_name)
     baseline.eval()
 
-    for k, item in tqdm.tqdm(enumerate(loader_train_eval)):
+    for k, item in tqdm(enumerate(loader_train_eval)):
 
         pred = pd.DataFrame(baseline(item['lc']).detach().numpy())
 
@@ -87,7 +90,7 @@ if __name__ == "__main__":
         device = "cuda"
     else:
         device = "cpu"
-        torch.set_num_threads(os.cpu_count() - 1)
+        # torch.set_num_threads(os.cpu_count() - 1)
 
     error_dataset = None
 
@@ -121,7 +124,7 @@ if __name__ == "__main__":
             baseline = Baseline(H1=H1, H2=H2, H3=H3, input_dim=abs(start - stop) * n_wavelengths).double().to(device)
 
             train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, baseline,
-                                                                    epochs, save_from)
+                                                                    epochs, save_from, model_name=f"./model/model_state_{i}.pt")
 
             # -------------------------------------
             # Forgot to pass "save_folder" as a str, now it is not gonna save properly
@@ -140,9 +143,9 @@ if __name__ == "__main__":
     # ----------------------------------------
     # UPLOAD OR DOWNLOAD MODELS FROM GCP FOR HERE (TBC)
     if main is False:
-        os.system("gsutil -m cp -r ./model/*.pt gs://arielml_data/trained_model/20062021/")
+        os.system("gsutil -m cp -r ./model/*.pt gs://arielml_data/trained_model/24062021/")
     elif main is True and len(os.listdir("model")) <= 6:
-        os.system("gsutil -m cp -r gs://arielml_data/trained_model/20062021/*.pt ./model/")
+        os.system("gsutil -m cp -r gs://arielml_data/trained_model/24062021/*.pt ./model/")
     # ----------------------------------------
 
 
@@ -157,8 +160,6 @@ if __name__ == "__main__":
             [p.split(".")[0] for p in os.listdir(lc_train_path) if p.endswith('txt')])
 
         batch_size = 1000
-        torch.set_num_threads(os.cpu_count() // 2)
-        torch.set_num_interop_threads(os.cpu_count() // 2)
 
 
         # Working on errors
@@ -177,7 +178,7 @@ if __name__ == "__main__":
             inner_pred(f)
         
         # Combine csv files
-        train_errors = sorted(glob.glob("./outputs/train_error_*.csv"))
+        train_errors = sorted(glob.glob("./model/model_state_*.csv"))
         train_eval_df = pd.DataFrame()
 
         for train_error in tqdm(train_errors):
@@ -200,7 +201,7 @@ if __name__ == "__main__":
                                  error_dataset=train_eval_df)
 
         batch_size = 50
-        torch.set_num_threads(os.cpu_count() - 1)
+        # torch.set_num_threads(os.cpu_count() - 1)  # Disable this if training fails. 
 
         total_length = (n_timesteps * n_wavelengths) + (55 * 6)  # hardcoded
         baseline = Baseline(H1=256, H2=1024, H3=1024, H4=256, input_dim=total_length, model_num=2).double().to(device)
