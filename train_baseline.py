@@ -46,7 +46,7 @@ def train(batch_size, dataset_train, dataset_val, baseline=None, epochs=10, save
     # SEt num_workers to 0 or remove it if training fails. 
     loader_train = DataLoader( 
         dataset_train, batch_size=batch_size, shuffle=True, num_workers=2)
-    loader_val = DataLoader(dataset_val, batch_size=batch_size)
+    loader_val = DataLoader(dataset_val, batch_size=batch_size, num_workers=2)
 
     # Define baseline model
     if baseline is None:

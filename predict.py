@@ -19,6 +19,7 @@ import os
 import pandas as pd
 import gc
 import glob
+import time
 
 
 def main():
@@ -39,7 +40,9 @@ def main():
 
         start = int(model_name[-4])
 
-        if not os.path.exists(f"{model_name[:-3]}.csv"):
+        curr_name = "outputs/" + model_name.split("/")[1][:-3] + ".csv"
+
+        if not os.path.exists(curr_name):
 
             dataset_eval = ArielMLDataset(lc_test_path, shuffle=False, transform=simple_transform, start=start * 50, stop=(start + 1) * 50)
 
@@ -54,7 +57,7 @@ def main():
 
                 pred = pd.DataFrame(baseline(item['lc']).detach().numpy())
 
-                pred.to_csv(f"{model_name[:-3]}.csv", mode="a", header=None, index=False, sep="\t")
+                pred.to_csv(curr_name, mode="a", header=None, index=False, sep="\t")
 
                 del pred
                 
@@ -66,11 +69,11 @@ def main():
         else:
             print(f"Skipping {model_name} as its csv already exists.")
 
-    os.system("gsutil -m cp -r model/* gs://arielml_data/trained_model/20062021/")
+    os.system("gsutil -m cp -r model/* gs://arielml_data/trained_model/24062021/")
 
     # For second layer prediction.
     test_eval_df = pd.DataFrame()
-    test_errors = sorted(glob.glob("./model/*.csv"))
+    test_errors = sorted(glob.glob("./outputs/*.csv"))
 
     for test_error in tqdm.tqdm(test_errors):
         our_df = pd.read_csv(test_error, header=None, sep="\t").T
@@ -82,7 +85,7 @@ def main():
 
     dataset_eval = ArielMLDataset(lc_test_path, shuffle=False, transform=simple_transform, error_dataset=test_eval_df)
 
-    loader_eval = DataLoader(dataset_eval, batch_size=250, shuffle=False, num_workers=os.cpu_count() - 1)
+    loader_eval = DataLoader(dataset_eval, batch_size=250, shuffle=False, num_workers=os.cpu_count() // 2)
 
     total_length = (n_timesteps * n_wavelengths) + (55 * 6)
     baseline = Baseline(input_dim=total_length, model_num=2).double().to(device)
@@ -94,14 +97,16 @@ def main():
     baseline = torch.load("outputs/model_state_stacking.pt")
     baseline.eval()
 
-    if os.path.exists("outputs/baseline_predict_stacking_NOTFORUPLOAD.txt"):
-        os.remove("outputs/baseline_predict_stacking_NOTFORUPLOAD.txt")
+    mypath = "outputs/baseline_predict_stacking_2.txt"
+
+    if os.path.exists(mypath):
+        os.remove(mypath)
 
     for k, item in tqdm.tqdm(enumerate(loader_eval)):
         
         pred = pd.DataFrame(baseline(item["lc"]).detach().numpy())
 
-        pred.to_csv(f"outputs/baseline_predict_stacking_NOTFORUPLOAD.txt", mode="a", header=None, index=False, sep="\t")
+        pred.to_csv(mypath, mode="a", header=None, index=False, sep="\t")
 
         del pred
 
@@ -110,7 +115,7 @@ def main():
 
     print(f"Finish with final prediction.")
 
-    os.system("gsutil -m cp -r outputs/baseline_pred*.txt gs://arielml_data/trained_model/20062021/")
+    os.system("gsutil -m cp -r outputs/baseline_pred*.txt gs://arielml_data/trained_model/24062021/")
 
     
 
