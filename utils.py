@@ -370,4 +370,68 @@ class BaselineLSTM(torch.nn.Module) :   ## is probably 55,batch,300    #need 300
         y = self.dropout(y)
         lstm_out, self.hidden = self.lstm(y, (h,c))
         lstm_out = self.fc(lstm_out[:,-1,:])
-        return lstm_out, self.hidden
+        return lstm_out #, self.hidden
+
+
+class BaselineLSTMAlt(torch.nn.Module):
+    def __init__(self,hidden_dim, H1, H2, new_input_dim=55*300,batch_size=100,input_dim=55,
+            output_dim=55,num_layers=2,device="cpu",h0=None,c0=None):
+        '''
+        input_dim = no. of parameters (no. of wavelengths)
+        hidden_dim = no. of hidden dim in hidden layer (doesn't depend on input)
+        batch_size = batch_size
+        output_dim = no. of output parameters
+        num_layers = no. consecutive LSTM layers
+        '''
+            # torch.Size([100, 55, 300]) Transpose False. 
+            # torch.Size([100, 300, 55]) Transpose True.    Want this
+        super(BaselineLSTM, self).__init__()
+        if h0 == None:
+            self.h0 = torch.zeros(2*num_layers, batch_size, hidden_dim,device=device).double() 
+            self.c0 = torch.zeros(2*num_layers, batch_size, hidden_dim,device=device).double() 
+        else:
+            self.h0 = h0
+            self.c0 = c0
+        
+        self.hidden = None
+        self.input_dim = input_dim
+        self.lstm = torch.nn.LSTM(input_size=input_dim,
+                            hidden_size=hidden_dim,
+                            num_layers=2,
+                            batch_first=True,
+                            bidirectional=True)
+                            # dropout=0.1)
+        # self.dropout = torch.nn.Dropout(p=0.1)
+
+        self.layer1 = torch.nn.Linear(new_input_dim, H1)
+        self.act1 = torch.nn.ReLU()
+        self.layer2 = torch.nn.Linear(H1, H2)
+        self.act2 = torch.nn.ReLU()
+
+
+        self.fc = torch.nn.Linear(2*hidden_dim,H2)
+        self.actfc = torch.nn.ReLU()
+        self.layer3 = torch.nn.ReLU(H2, H1)
+        self.act3 = torch.nn.ReLu()
+        self.final = torch.nn.Linear(H1, output_dim)
+
+    def forward(self, y, h = None, c = None):
+        if h==None:
+            h = self.h0
+            c = self.c0
+
+        out = torch.flatten(
+            y, start_dim=1)
+        out = self.layer1(out)
+        out = self.act1(out)
+        out = self.layer2(out)
+        out = self.act2(out)
+        out = torch.reshape(out, (-1, -1, self.input_dim))
+
+        lstm_out, self.hidden = self.lstm(out, (h,c))
+        lstm_out = self.fc(lstm_out[:,-1,:])
+        lstm_out = self.actfc(lstm_out)
+        lstm_out = self.layer3(lstm_out)
+        lstm_out = self.act3(lstm_out)
+        lstm_out = self.final(lstm_out)
+        return lstm_out #, self.hidden
