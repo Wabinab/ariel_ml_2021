@@ -8,6 +8,9 @@ import torch
 from pathlib import Path
 from torch.utils.data import Dataset
 from torch.nn import Module, Sequential
+from torchvision import transforms
+
+from sklearn.preprocessing import MinMaxScaler
 
 # __author__ = "Mario Morvan"
 # __email__ = "mario.morvan.18@ucl.ac.uk"
@@ -57,10 +60,10 @@ class ArielMLDataset(Dataset):
 
         self.files = sorted(
             [p for p in os.listdir(self.lc_path) if p.endswith('txt')])
+        self.files = self.files[start_ind:start_ind+max_size]
         if shuffle:
             np.random.seed(seed)
             np.random.shuffle(self.files)
-        self.files = self.files[start_ind:start_ind+max_size]
 
         if params_path is not None:
             self.params_path = params_path
@@ -74,64 +77,12 @@ class ArielMLDataset(Dataset):
     def __getitem__(self, idx):
         item_lc_path = Path(self.lc_path) / self.files[idx]
 
-        # Loading extra 6 parameters. 
-        # with open(item_lc_path, "r") as f:
-        #     temp_storage_str = list(itertools.islice(f, 6))
-
-        # temp_storage_float = []
-
-        # for string in temp_storage_str:
-        #     # Separate the digits and the non-digits.
-        #     new_str = ["".join(x) for _, x in itertools.groupby(string, key=str.isdigit)]
-
-        #     # Only new_str[0] is the one we want to omit.
-        #     # We want to join back into a single string because "." previously is classifed
-        #     # as non-digit. 
-        #     new_str = "".join(new_str[1:])  
-
-        #     # Convert to float. 
-        #     temp_storage_float.append(float(new_str))
-
-        # Transformation done here since it is easier to work with python list
-        # than with numpy in terms of single element alterations, although this 
-        # does introduces overheads. 
-        # star temp no changes
-        # star logg deleted. 
-        # star rad max 1.8
-        # star mass max 1.50
-        # star k mag min 7.0
-        # period max 16.0
-
-        # temp_storage_float.pop(-5)
-        
-        # if temp_storage_float[-4] > 1.8:
-        #     temp_storage_float[-4] = 1.8
-
-        # if temp_storage_float[-3] > 1.5:
-        #     temp_storage_float[-3] = 1.5
-
-        # if temp_storage_float[-2] < 7.0:
-        #     temp_storage_float[-2] = 7.0
-
-        # if temp_storage_float[-1] > 16.0:
-        #     temp_storage_float[-1] = 16.0
-
         lc = np.loadtxt(item_lc_path)
-        # lc = lc[:, 99:200]
-
-        # lc = lc[:, ::3]  # Take every 3rd element
-
-        # Note that the line below will automatically flatten our array
-        # as it is not the same shape. This allows us to not flatten it later? 
-        # I'll leave the flattening and see if it runs. If it doesn't, I'll 
-        # remove the flattening (later in the code). 
-
-        # lc = np.append(lc, temp_storage_float)
-
-        lc = torch.from_numpy(lc)
 
         if self.transform:
             lc = self.transform(lc)
+
+        # lc = torch.from_numpy(lc)
 
         if self.transpose is True: 
             lc = lc.T
@@ -154,18 +105,23 @@ def simple_transform(x):
         preprocessed array
     """
     ##preprocessing##
-    out = x.clone()
+    try:
+        out = x.clone()
+    except Exception:
+        out = x.copy()
+        
+    # Min Max Scaling
+    scaler = MinMaxScaler(feature_range=(0, 255))
+    scaler.fit(out)
+    out = scaler.transform(out)
 
+    out = torch.from_numpy(out)
 
-    # rand_array = np.random.rand(55 * 300 + 6)
-    # centering
-    # out -= rand_array
-    out -= 1.0
+    out = transforms.RandomResizedCrop(224)(out)
+    out = transforms.RandomHorizontalFlip()(out)
 
-    # rough rescaling
-    out /= 0.04
-    # out = np.divide(out, some_std_np_array_with_same_shape)
-    # out /= abs(out.mean())
+    assert type(out) == torch.Tensor
+    
     return out
 
 
