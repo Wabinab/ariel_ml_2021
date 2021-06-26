@@ -2,7 +2,8 @@
 import numpy as np
 import torch
 from torch._C import device
-from utils import ArielMLDataset, BaselineLSTM, ChallengeMetric, Baseline, simple_transform
+from utils import (ArielMLDataset, BaselineLSTM, ChallengeMetric, Baseline, simple_transform,
+                    BaselineGRU)
 from torch.utils.data.dataloader import DataLoader
 from torch.nn import MSELoss
 from torch.optim import Adam
@@ -19,21 +20,21 @@ __email__ = "mario.morvan.18@ucl.ac.uk"
 project_dir = pathlib.Path(__file__).parent.absolute()
 
 # paths to data dirs
-lc_train_path = project_dir / \
-    "/home/chowjunwei37/Documents/data/training_set/noisy_train"
-params_train_path = project_dir / \
-    "/home/chowjunwei37/Documents/data/training_set/params_train"
-
 # lc_train_path = project_dir / \
-#      "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/noisy_train"
+#     "/home/chowjunwei37/Documents/data/training_set/noisy_train"
 # params_train_path = project_dir / \
-#      "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
+#     "/home/chowjunwei37/Documents/data/training_set/params_train"
 
-prefix = "lstm_dropout"
+lc_train_path = project_dir / \
+     "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/noisy_train"
+params_train_path = project_dir / \
+     "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
+
+prefix = "gru_dropout"
 
 # training parameters
-train_size = 120000
-val_size = 5600
+train_size = 1000
+val_size = 500
 epochs = 40
 save_from = 1
 
@@ -42,19 +43,19 @@ H1 = 256
 H2 = 1024
 H3 = 256
 H_LSTM = 512
-
+H_GRU = 64
 
 # -------------------------------------------------
 
 def train(batch_size, dataset_train, dataset_val, device):
 
     loader_train = DataLoader(
-        dataset_train, batch_size=batch_size, shuffle=True)
-    loader_val = DataLoader(dataset_val, batch_size=batch_size)
+        dataset_train, batch_size=batch_size, shuffle=True, num_workers=2)
+    loader_val = DataLoader(dataset_val, batch_size=batch_size, num_workers=2)
 
     # Define baseline model
     # baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
-    baseline = BaselineLSTM(hidden_dim=H_LSTM, batch_size=batch_size, device=device).double().to(device)
+    baseline = BaselineGRU(hidden_dim=H_GRU, batch_size=batch_size, device=device).double().to(device)
 
     # Define Loss, metric and optimizer
     loss_function = MSELoss()
@@ -88,8 +89,8 @@ def train(batch_size, dataset_train, dataset_val, device):
         val_score = 0
         baseline.train()
 
-        for k, item in tqdm(enumerate(loader_train)):
-            pred, _ = baseline(item['lc'])
+        for k, item in enumerate(tqdm(loader_train)):
+            pred = baseline(item['lc'])
             loss = loss_function(item['target'], pred)
             opt.zero_grad()
             loss.backward()
@@ -98,8 +99,8 @@ def train(batch_size, dataset_train, dataset_val, device):
         train_loss = train_loss / len(loader_train)
         baseline.eval()
 
-        for k, item in tqdm(enumerate(loader_val)):
-            pred, _ = baseline(item['lc'])
+        for k, item in enumerate(tqdm(loader_val)):
+            pred = baseline(item['lc'])
             loss = loss_function(item['target'], pred)
             score = challenge_metric.score(item['target'], pred)
             val_loss += loss.detach().item()
