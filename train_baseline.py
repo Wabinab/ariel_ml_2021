@@ -42,7 +42,7 @@ save_from = 1
 H1 = 256
 H2 = 1024
 H3 = 256
-H_LSTM = 512
+H_LSTM = 64
 H_GRU = 64
 
 # -------------------------------------------------
@@ -55,7 +55,7 @@ def train(batch_size, dataset_train, dataset_val, device):
 
     # Define baseline model
     # baseline = Baseline(H1=H1, H2=H2, H3=H3).double().to(device)
-    baseline = BaselineGRU(hidden_dim=H_GRU, batch_size=batch_size, device=device).double().to(device)
+    baseline = BaselineLSTM(hidden_dim=H_LSTM, batch_size=batch_size, device=device).double().to(device)
 
     # Define Loss, metric and optimizer
     loss_function = MSELoss()
@@ -158,7 +158,7 @@ def main():
 
     # Loaders
     # batch_size = int(train_size / 4)
-    batch_size = 100
+    batch_size = 25
     
     train_losses, val_losses, val_scores, baseline = train(batch_size, dataset_train, dataset_val, device)
     

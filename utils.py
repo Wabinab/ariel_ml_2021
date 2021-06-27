@@ -335,7 +335,7 @@ class BaselineConv(Module):
 
 class BaselineLSTM(torch.nn.Module) :   ## is probably 55,batch,300    #need 300,batch,55 or batch,300,55
     def __init__(self,hidden_dim,batch_size,input_dim=55,
-            output_dim=55,num_layers=2,device="cpu",h0=None,c0=None):
+            output_dim=55,num_layers=4,device="cpu",h0=None,c0=None):
         '''
         input_dim = no. of parameters (no. of wavelengths)
         hidden_dim = no. of hidden dim in hidden layer (doesn't depend on input)
@@ -356,7 +356,7 @@ class BaselineLSTM(torch.nn.Module) :   ## is probably 55,batch,300    #need 300
         self.hidden = None
         self.lstm = torch.nn.LSTM(input_size=input_dim,
                             hidden_size=hidden_dim,
-                            num_layers=2,
+                            num_layers=num_layers,
                             batch_first=True,
                             bidirectional=True,
                             dropout=0.1)
@@ -364,13 +364,10 @@ class BaselineLSTM(torch.nn.Module) :   ## is probably 55,batch,300    #need 300
         self.fc = torch.nn.Linear(2*hidden_dim,output_dim)
 
     def forward(self, y, h = None, c = None):
-        if h==None:
-            h = self.h0
-            c = self.c0
-        y = self.dropout(y)
-        lstm_out, self.hidden = self.lstm(y, (h,c))
+        lstm_out, _ = self.lstm(y, (self.h0,self.c0))
+        lstm_out = self.dropout(lstm_out)
         lstm_out = self.fc(lstm_out[:,-1,:])
-        return lstm_out #, self.hidden
+        return lstm_out
 
 
 class BaselineGRU(torch.nn.Module):
