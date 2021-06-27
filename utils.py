@@ -1,4 +1,8 @@
-"""Define generic classes and functions to facilitate baseline construction"""
+"""
+Define generic classes and functions to facilitate baseline construction
+Some insights taken from here as well: 
+https://www.kaggle.com/veb101/transfer-learning-using-efficientnet-models
+"""
 import itertools
 import os
 import numpy as np
@@ -7,6 +11,7 @@ import torch
 
 from pathlib import Path
 from torch.utils.data import Dataset
+from torch import nn
 from torch.nn import Module, Sequential
 from torchvision import transforms
 
@@ -32,13 +37,13 @@ class ArielMLDataset(Dataset):
     """Class for reading files for the Ariel ML data challenge 2021"""
 
     def __init__(self, lc_path, params_path=None, transform=None, start_ind=0,
-                 max_size=int(1e9), shuffle=True, seed=None, device=None, transpose=None):
+                 max_size=int(1e9), shuffle=True, seed=None, device=None):
         """Create a pytorch dataset to read files for the Ariel ML Data challenge 2021
 
         Args:
-            lc_path: str
+            lc_path: (pathlib.Path)
                 path to the folder containing the light curves files
-            params_path: str
+            params_path: (pathlib.Path)
                 path to the folder containing the target transit depths (optional)
             transform: callable
                 transformation to apply to the input light curves
@@ -55,12 +60,13 @@ class ArielMLDataset(Dataset):
         """
         self.lc_path = lc_path
         self.transform = transform
-        self.transpose = transpose
         self.device = device
 
         self.files = sorted(
-            [p for p in os.listdir(self.lc_path) if p.endswith('txt')])
+            [p for p in self.lc_path.iterdir() if p.suffix == 'txt'])
         self.files = self.files[start_ind:start_ind+max_size]
+        self.files = np.array(self.files)
+
         if shuffle:
             np.random.seed(seed)
             np.random.shuffle(self.files)
@@ -75,25 +81,25 @@ class ArielMLDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, idx):
-        item_lc_path = Path(self.lc_path) / self.files[idx]
-
-        lc = np.loadtxt(item_lc_path)
-
-        if self.transform:
-            lc = self.transform(lc)
-
-        # lc = torch.from_numpy(lc)
-
-        if self.transpose is True: 
-            lc = lc.T
         
-        if self.params_path is not None:
-            item_params_path = Path(self.params_path) / self.files[idx]
-            target = torch.from_numpy(np.loadtxt(item_params_path))
-        else:
-            target = torch.Tensor()
-        return {'lc': lc.to(self.device),
-                'target': target.to(self.device)}
+
+    # def __getitem__(self, idx):
+    #     item_lc_path = Path(self.lc_path) / self.files[idx]
+
+    #     lc = np.loadtxt(item_lc_path)
+
+    #     if self.transform:
+    #         lc = self.transform(lc)
+
+    #     # lc = torch.from_numpy(lc)
+        
+    #     if self.params_path is not None:
+    #         item_params_path = Path(self.params_path) / self.files[idx]
+    #         target = torch.from_numpy(np.loadtxt(item_params_path))
+    #     else:
+    #         target = torch.Tensor()
+    #     return {'lc': lc.to(self.device),
+    #             'target': target.to(self.device)}
 
 
 def simple_transform(x):
@@ -118,7 +124,10 @@ def simple_transform(x):
     out = torch.from_numpy(out)
 
     out = transforms.RandomResizedCrop(224)(out)
+    # out = transforms.RandomRotation(30)(out)
+    # out = transforms.RandomAffine(10, translate=(0.01, 0.12), shear=(0.01, 0.03))(out)
     out = transforms.RandomHorizontalFlip()(out)
+    out = transforms.RandomVerticalFlip()(out)
 
     assert type(out) == torch.Tensor
     
@@ -180,6 +189,58 @@ class ChallengeMetric:
         return (1e4 - 2 * (weights * y * torch.abs(pred - y)).sum() / weights.sum() * 1e6)
 
 
+class TransferModel(Module):
+    """
+    Transfer learning model using EfficientNet-b0. Might try Resnet depending on time constraint. 
+    """
+
+    @staticmethod
+    def final_layer(hidden_dim, output_dim):
+        linear_layers = nn.Linear(hidden_dim, output_dim)
+        return linear_layers
+
+    def __init__(self, model_name=None, model=None, input_dim=224), output_dim=n_wavelengths):
+        """
+        :var model_name: (str) name of transfer learning model. 
+        :var model: (model) The actual model want to transfer learn from. 
+        :var input_dim: (int, tuple?) Size of image. 
+        """
+        self.model_name = model_name
+        self.model = copy.deepcopy(model)
+
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+
+        self.hidden_dim = self.model._fc.in_features
+        self.model._fc = TransferModel.final_layer(self.hidden_dim, self.output_dim)
+
+    def forward(self, x):
+        return self.model(x)
+
+    def freeze(self):
+        """
+        Freeze unneeded training layers.
+        """
+        for param in self.model_parameters():
+            param.requires_grad = False
+
+        for param in self.model._fc.parameters():
+            param.requires_grad = True
+
+    def unfreeze(self):
+        """
+        Unfreeze all layers
+        """
+        for param in self.model.parameters():
+            param.require_grad = True
+
+    def __repr__(self):
+        return f"{self.model}"
+
+
+
+
+
 class Baseline(Module):
     """Baseline model for Ariel ML data challenge 2021"""
 
@@ -197,16 +258,6 @@ class Baseline(Module):
                 output dimension (default = 55)
         """
         super().__init__()
-        ##model##
-        # self.network = Sequential(torch.nn.Linear(input_dim, H1),
-        #                            torch.nn.ReLU(),
-        #                            torch.nn.Linear(H1, H2),
-        #                            torch.nn.ReLU(),
-        #                            torch.nn.Linear(H2, output_dim),
-        #                            )
-        # H1 = 256
-        # H2 = 1024
-        # H3 = 256
         self.network = Sequential(torch.nn.Linear(input_dim, H1),
                                   torch.nn.ReLU(),
                                   torch.nn.Linear(H1, H2),
@@ -251,78 +302,25 @@ class BaselineConv(Module):
         log_probs = torch.nn.functional.log_softmax(x, dim=1)
         # return log_probs
         return x
-    
-# class BaselineLSTM(Module):
-#     def __init__(self, dimension = 128, seq_len = 300, in_size = 55):
-#         super().__init__()
-#         # (seq_len, batch_size, input_size)  # if batch_first = False
-#         self.in_size = in_size #input dimension
-#         self.dimension = dimension  #hidden dimension
-#         self.seq_len = seq_len   
-#         self.lstm = torch.nn.LSTM(input_size=seq_len,
-#                             hidden_size=dimension,
-#                             num_layers=1,
-#                             batch_first=True,
-#                             bidirectional=True)
-#         #self.drop = torch.nn.Dropout(p=0.2)
-#         self.fc = torch.nn.Linear(2*dimension, in_size)
-#         self.hidden = None
+
+
+
+
+# # ===================================================
+# # Example of transfer learning to load part of pretrained model. 
+#     pretrained = torchvision.models.alexnet(pretrained=True)
+#     class MyAlexNet(nn.Module):
+#         def __init__(self, my_pretrained_model):
+#             super(MyAlexNet, self).__init__()
+#             self.pretrained = my_pretrained_model
+#             self.my_new_layers = nn.Sequential(nn.Linear(1000, 100),
+#                                             nn.ReLU(),
+#                                             nn.Linear(100, 2))
         
-    
-#     def init_hidden(self, batch_size):
-#         # even with batch_first = True this remains same as docs
-#         hidden_state = torch.zeros(1,batch_size,self.dimension)
-#         cell_state = torch.zeros(1,batch_size,self.dimension)
-#         self.hidden = (hidden_state, cell_state)
-    
-    
-#     def forward(self, x):      
-#         #seq = torch.split(x, self.seq_len,dim=1)  #shape is (55,300)
+#         def forward(self, x):
+#             x = self.pretrained(x)
+#             x = self.my_new_layers(x)
+#             return x
 
-#         #batch_size, seq_len, _ = x.size()
-
-#         #output of shape (seq_len, batch, 2 * dimension)
-
-#         lstm_out, self.hidden = self.lstm(x,self.hidden)
-#         #x = lstm_out.contiguous().view(batch_size,-1)
-#         return self.fc(lstm_out)
-
-##########################
-class BaselineLSTM(torch.nn.Module) :   ## is probably 55,batch,300    #need 300,batch,55 or batch,300,55
-    def __init__(self,hidden_dim,batch_size,input_dim=55,
-            output_dim=55,num_layers=2,device="cpu",h0=None,c0=None):
-        '''
-        input_dim = no. of parameters (no. of wavelengths)
-        hidden_dim = no. of hidden dim in hidden layer (doesn't depend on input)
-        batch_size = batch_size
-        output_dim = no. of output parameters
-        num_layers = no. consecutive LSTM layers
-        '''
-            # torch.Size([100, 55, 300]) Transpose False. 
-            # torch.Size([100, 300, 55]) Transpose True.    Want this
-        super(BaselineLSTM, self).__init__()
-        if h0 == None:
-            self.h0 = torch.zeros(2*num_layers, batch_size, hidden_dim,device=device).double() 
-            self.c0 = torch.zeros(2*num_layers, batch_size, hidden_dim,device=device).double() 
-        else:
-            self.h0 = h0
-            self.c0 = c0
-        
-        self.hidden = None
-        self.lstm = torch.nn.LSTM(input_size=input_dim,
-                            hidden_size=hidden_dim,
-                            num_layers=2,
-                            batch_first=True,
-                            bidirectional=True)
-                            #dropout=0.1)
-        #self.dropout = torch.nn.Dropout(p=0.1)
-        self.fc = torch.nn.Linear(2*hidden_dim,output_dim)
-
-    def forward(self, y, h = None, c = None):
-        if h==None:
-            h = self.h0
-            c = self.c0
-        #y = self.dropout(y)
-        lstm_out, self.hidden = self.lstm(y, (h,c))
-        lstm_out = self.fc(lstm_out[:,-1,:])
-        return lstm_out, self.hidden
+#     my_extended_model = MyAlexNet(my_pretrained_model=pretrained)
+#     my_extended_model

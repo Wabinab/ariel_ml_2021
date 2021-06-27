@@ -4,13 +4,14 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
+import gc
 
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from torchvision import datasets, models, transforms
 from efficientnet_pytorch import EfficientNet
 
-from utils import ArielMLDataset, BaselineLSTM, ChallengeMetric, Baseline, simple_transform
+from utils import ArielMLDataset, TransferModel, ChallengeMetric, simple_transform
 
 import copy
 import matplotlib.pyplot as plt
@@ -30,19 +31,58 @@ batch_size = 25
 save_from = 1
 
 
-def train_model(model, criterion, opt, scheduler, loader_train, loader_val, 
-                device="cpu", num_epochs=25):
+def to_device(data, device):
+    """
+    Taken from https://www.kaggle.com/veb101/transfer-learning-using-efficientnet-models
+    for moving tensor(s) to chosen device. 
+
+    :var data: (Tensors) Can be tensors or can be model (weights). 
+    :var device: Device to move to. In this case, GPU. 
+    """
+    if isinstance(data, (list, tuple)):
+        return [to_device(x, device) for x in data]  # Recursive call. 
+    return data.to(device, non_blocking=True)
+
+
+# Also taken from https://www.kaggle.com/veb101/transfer-learning-using-efficientnet-models
+class DeviceDataLoader():
+    """Wrap a dataloader to move data to a device"""
+    def __init__(self, dl, device):
+        self.dl = dl
+        self.device = device
+        
+    def __iter__(self):
+        """Yield a batch of data after moving it to device"""
+        for b in self.dl: 
+            yield to_device(b, self.device)
+
+    def __len__(self):
+        """Number of batches"""
+        return len(self.dl)
+
+
+def train_model(model, criterion, loader_train, loader_val, 
+                device="cpu", num_epochs=25, dir="./outputs"):
     """
     :var model: (Pytorch savedmodel format, any .pt, .pth, etc) The model to use for transfer learning. 
     """
+    if device != "cpu":
+        torch.cuda.empty_cache()
+
     best_model_wts = copy.deepcopy(model.state_dict())
     val_scores = np.zeros((num_epochs, ), dtype=np.float32)
     best_val_score = 0.0
     challenge_metric = ChallengeMetric()
 
+    opt = torch.optim.SGD(model.parameters())
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, "max", patience=2)
+
     for epoch in range(num_epochs):
         print(f"Epoch {epoch}/{num_epochs - 1}")
         val_score = 0
+
+        # Implement azureml.core.Run method to log val score. If not required, use otherwise. 
         model.train()
 
         for k, item in enumerate(tqdm(loader_train)):
@@ -51,12 +91,11 @@ def train_model(model, criterion, opt, scheduler, loader_train, loader_val,
             opt.zero_grad()
             loss.backward()
             opt.step()
-            scheduler.step()
             # train_loss += loss.detach().item()
 
         model.eval()
 
-        for k, item in tqdm(enumerate(loader_val)):
+        for k, item in enumerate(tqdm(loader_val)):
             pred, _ = model(item['lc'])
             loss = criterion(item['target'], pred)
             score = challenge_metric.score(item['target'], pred)
@@ -64,6 +103,8 @@ def train_model(model, criterion, opt, scheduler, loader_train, loader_val,
             val_score += score.detach().item()
 
         val_score /= len(loader_val)
+
+        scheduler.step(val_score)
 
         print('Val score', round(val_score, 2))
 
@@ -78,7 +119,9 @@ def train_model(model, criterion, opt, scheduler, loader_train, loader_val,
                 "opt": opt.state_dict(),
                 "scheduler": scheduler.state_dict(),
                 "model": model.state_dict()
-            }, "Best_trained_model_resnet.pt")
+            }, f"{dir}/Best_trained_model_resnet.pt")
+
+        gc.collect()
 
     model.load_state_dict(best_model_wts)
     
@@ -87,11 +130,13 @@ def train_model(model, criterion, opt, scheduler, loader_train, loader_val,
 
 def main():
     # paths to data dirs
-    lc_train_path = pathlib.Path(
-        "/home/chowjunwei37/Documents/data/training_set/noisy_train")
-    params_train_path = pathlib.Path(
-        "/home/chowjunwei37/Documents/data/training_set/params_train")
+    # lc_train_path = pathlib.Path("/home/chowjunwei37/Documents/data/training_set/noisy_train")
+    # params_train_path = pathlib.Path("/home/chowjunwei37/Documents/data/training_set/params_train")
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    lc_train_path = pathlib.Path("./training_set/noisy_train")
+    params_train_path = pathlib.Path("./training_set/params_train")
     
     dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
                                     max_size=train_size, transform=simple_transform, device=device,
@@ -103,29 +148,21 @@ def main():
     
 
     loader_train = DataLoader(dataset_train, batch_size=batch_size, 
-                    shuffle=True, num_workers=2)
+                    shuffle=True, num_workers=3)
     loader_val = DataLoader(dataset_val, batch_size=batch_size, num_workers=2)
 
     # model = torch.hub.load("pytorch/vision:v0.9.0", "resnet34", pretrained=True)
-    model = EfficientNet.from_pretrained("efficientnet-b0")
+    model_name = "efficientnet-b0"
+    image_size = 224
+
+    model = EfficientNet.from_pretrained(model_name)
+    model = TransferModel(model_name, model, image_size)
+    model = to_device(model, device)
+
+    criterion = MSELoss()
+
+    val_scores, model = train_model(model, criterion, loader_train, loader_val, device, 10)
 
 
-# ===================================================
-# Example of transfer learning to load part of pretrained model. 
-    pretrained = torchvision.models.alexnet(pretrained=True)
-    class MyAlexNet(nn.Module):
-        def __init__(self, my_pretrained_model):
-            super(MyAlexNet, self).__init__()
-            self.pretrained = my_pretrained_model
-            self.my_new_layers = nn.Sequential(nn.Linear(1000, 100),
-                                            nn.ReLU(),
-                                            nn.Linear(100, 2))
-        
-        def forward(self, x):
-            x = self.pretrained(x)
-            x = self.my_new_layers(x)
-            return x
 
-    my_extended_model = MyAlexNet(my_pretrained_model=pretrained)
-    my_extended_model
 
