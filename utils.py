@@ -8,6 +8,7 @@ import os
 import numpy as np
 from numpy.core.fromnumeric import transpose
 import torch
+from PIL import Image
 
 from pathlib import Path
 from torch.utils.data import Dataset
@@ -36,14 +37,16 @@ n_timesteps = 300
 class ArielMLDataset(Dataset):
     """Class for reading files for the Ariel ML data challenge 2021"""
 
-    def __init__(self, lc_path, params_path=None, transform=None, start_ind=0,
+    def __init__(self, lc_path, this_type, params_file=None, transform=None, start_ind=0,
                  max_size=int(1e9), shuffle=True, seed=None, device=None):
         """Create a pytorch dataset to read files for the Ariel ML Data challenge 2021
 
         Args:
             lc_path: (pathlib.Path)
                 path to the folder containing the light curves files
-            params_path: (pathlib.Path)
+            this_type: (str)
+                "train" or "val"
+            params_file: (pandas DataFrame)
                 path to the folder containing the target transit depths (optional)
             transform: callable
                 transformation to apply to the input light curves
@@ -61,9 +64,10 @@ class ArielMLDataset(Dataset):
         self.lc_path = lc_path
         self.transform = transform
         self.device = device
+        self.type = this_type
 
         self.files = sorted(
-            [p for p in self.lc_path.iterdir() if p.suffix == 'txt'])
+            [p for p in self.lc_path.iterdir() if p.suffix == 'png'])
         self.files = self.files[start_ind:start_ind+max_size]
         self.files = np.array(self.files)
 
@@ -71,17 +75,28 @@ class ArielMLDataset(Dataset):
             np.random.seed(seed)
             np.random.shuffle(self.files)
 
-        if params_path is not None:
-            self.params_path = params_path
-        else:
-            self.params_path = None
-            self.params_files = None
+        if params_file is not None:
+            self.params_file = params_file
 
     def __len__(self):
         return len(self.files)
 
     def __getitem__(self, idx):
-        
+        item_lc_path = self.lc_path / self.files[idx]
+
+        img = Image.open(item_lc_path)
+
+        if self.transform:
+            img = self.transform(img, self.type)
+
+        if params_file is not None:
+            item_params_file = self.params_file[self.files[idx].split(".")[0]]
+            target = torch.from_numpy(item_params_file.to_numpy())
+        else:
+            target = torch.Tensor()
+
+        return {"lc": img.to(self.device),
+                "target": target.to(self.device)}
 
     # def __getitem__(self, idx):
     #     item_lc_path = Path(self.lc_path) / self.files[idx]
@@ -102,7 +117,7 @@ class ArielMLDataset(Dataset):
     #             'target': target.to(self.device)}
 
 
-def simple_transform(x):
+def simple_transform(x, **kwargs):
     """Perform a simple preprocessing of the input light curve array
     Args:
         x: np.array
@@ -131,6 +146,43 @@ def simple_transform(x):
 
     assert type(out) == torch.Tensor
     
+    return out
+
+
+def image_transform(x, type, **kwargs):
+    # imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
+    # Human protein stats. 
+    mean = torch.tensor([0.05438065, 0.05291743, 0.07920227])
+    std = torch.tensor([0.39414383, 0.33547948, 0.38544176])
+
+    train_trans = [
+        T.RandomResizedCrop(224),
+        T.RandomRotation(15),
+        T.RandomHorizontalFlip(),
+        T.RandomVerticalFlip(),
+        T.ToTensor(),
+        T.Normalize(mean, std, inplace=True)
+    ]
+
+    val_trans = [
+        T.Resize(224),
+        T.ToTensor(),
+        T.Normalize(mean, std, inplace=True)
+    ]
+
+    if type == "train":
+        transformation = T.Compose(train_trans)
+    else:
+        transformation = T.Compose(val_trans)
+
+    try:
+        out = x.clone()
+    except Exception:
+        out = x.copy()
+
+    out = transformation(out)
+
     return out
 
 

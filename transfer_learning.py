@@ -4,14 +4,16 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
+import argparse
 import gc
 
+from torch.nn import MSELoss
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from torchvision import datasets, models, transforms
 from efficientnet_pytorch import EfficientNet
 
-from utils import ArielMLDataset, TransferModel, ChallengeMetric, simple_transform
+from utils import ArielMLDataset, TransferModel, ChallengeMetric, image_transform
 
 import copy
 import matplotlib.pyplot as plt
@@ -23,12 +25,12 @@ from tqdm import tqdm
 
 # plt.ion()  # Interactive mode.
 
-project_dir = pathlib.Path(__file__).parent.absolute()
+# project_dir = pathlib.Path(__file__).parent.absolute()
 
-train_size = 110000
-val_size = 15600
-batch_size = 25
-save_from = 1
+# train_size = 110000
+# val_size = 15600
+# batch_size = 25
+# save_from = 1
 
 
 def to_device(data, device):
@@ -66,8 +68,7 @@ def train_model(model, criterion, loader_train, loader_val,
     """
     :var model: (Pytorch savedmodel format, any .pt, .pth, etc) The model to use for transfer learning. 
     """
-    if device != "cpu":
-        torch.cuda.empty_cache()
+    global prefix, save_from
 
     best_model_wts = copy.deepcopy(model.state_dict())
     val_scores = np.zeros((num_epochs, ), dtype=np.float32)
@@ -121,6 +122,10 @@ def train_model(model, criterion, loader_train, loader_val,
                 "model": model.state_dict()
             }, f"{dir}/Best_trained_model_resnet.pt")
 
+            torch.save(model, f'{dir}/model_state_{prefix}.pt')
+
+        np.savetxt(f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
+
         gc.collect()
 
     model.load_state_dict(best_model_wts)
@@ -133,23 +138,33 @@ def main():
     # lc_train_path = pathlib.Path("/home/chowjunwei37/Documents/data/training_set/noisy_train")
     # params_train_path = pathlib.Path("/home/chowjunwei37/Documents/data/training_set/params_train")
 
+    global prefix, train_size, val_size, batch_size, save_from
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    try:
+        torch.cuda.empty_cache()
+    except Exception:
+        pass
 
     lc_train_path = pathlib.Path("./training_set/noisy_train")
     params_train_path = pathlib.Path("./training_set/params_train")
     
     dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
-                                    max_size=train_size, transform=simple_transform, device=device,
+                                    max_size=train_size, transform=image_transform, device=device,
                                     transpose=False)
         # Validation
     dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
-                                max_size=val_size, transform=simple_transform, device=device,
+                                max_size=val_size, transform=image_transform, device=device,
                                 transpose=False)
     
 
     loader_train = DataLoader(dataset_train, batch_size=batch_size, 
-                    shuffle=True, num_workers=3)
-    loader_val = DataLoader(dataset_val, batch_size=batch_size, num_workers=2)
+                    shuffle=True, num_workers=3, pin_memory=True)
+    loader_val = DataLoader(dataset_val, batch_size=batch_size, num_workers=2, pin_memory=True)
+
+    loader_train = DeviceDataLoader(loader_train, device)
+    loader_val = DeviceDataLoader(loader_val, device)
 
     # model = torch.hub.load("pytorch/vision:v0.9.0", "resnet34", pretrained=True)
     model_name = "efficientnet-b0"
@@ -161,8 +176,22 @@ def main():
 
     criterion = MSELoss()
 
-    val_scores, model = train_model(model, criterion, loader_train, loader_val, device, 10)
+    val_scores, model = train_model(model, criterion, loader_train, loader_val, device, num_epochs=20)
+
+    np.savetxt(f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
+    torch.save(model, f'outputs/model_state_{prefix}.pt')
+
+    try:
+        torch.cuda.empty_cache()
+    except Exception:
+        pass
 
 
+if __name__ == "__main__":
+    prefix = "transfer_learning"
+    train_size = 110000
+    val_size = 15600
+    batch_size = 25
+    save_from = 1
 
-
+    main()
