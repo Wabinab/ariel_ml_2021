@@ -17,15 +17,15 @@ __email__ = "mario.morvan.18@ucl.ac.uk"
 project_dir = pathlib.Path(__file__).parent.absolute()
 
 # paths to data dirs
-# lc_train_path = project_dir / \
-#     "/home/chowjunwei37/Documents/data/training_set/noisy_train"
-# params_train_path = project_dir / \
-#     "/home/chowjunwei37/Documents/data/training_set/params_train"
-
 lc_train_path = project_dir / \
-     "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/noisy_train"
+    "/home/chowjunwei37/Documents/data/training_set/noisy_train"
 params_train_path = project_dir / \
-     "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
+    "/home/chowjunwei37/Documents/data/training_set/params_train"
+
+# lc_train_path = project_dir / \
+#      "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/noisy_train"
+# params_train_path = project_dir / \
+#      "/home/dsvm113/IdeaProjects/workspace/data_1/training_set/params_train"
 
 prefix = "11"
 

@@ -41,14 +41,14 @@ class ArielMLDataset(Dataset):
             device: str
                 torch device
         """
-        self.lc_path = Path(lc_path)
+        self.lc_path = lc_path
         self.transform = transform
         self.transpose = transpose
         self.device = device
 
         if skip_cc:
             self.files = sorted(
-                [p for p in self.lc_path.glob("*_01.txt")])  
+                [p for p in os.listdir(self.lc_path) if p.endswith('_01.txt')])
         else:
             self.files = sorted(
                 [p for p in self.lc_path.iterdir() if p.suffix == "txt"]

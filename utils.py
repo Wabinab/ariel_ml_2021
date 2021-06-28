@@ -3,6 +3,7 @@ Define generic classes and functions to facilitate baseline construction
 Some insights taken from here as well: 
 https://www.kaggle.com/veb101/transfer-learning-using-efficientnet-models
 """
+import copy
 import itertools
 import os
 import numpy as np
@@ -14,7 +15,7 @@ from pathlib import Path
 from torch.utils.data import Dataset
 from torch import nn
 from torch.nn import Module, Sequential
-from torchvision import transforms
+from torchvision import transforms as T
 
 from sklearn.preprocessing import MinMaxScaler
 
@@ -67,7 +68,7 @@ class ArielMLDataset(Dataset):
         self.type = this_type
 
         self.files = sorted(
-            [p for p in self.lc_path.iterdir() if p.suffix == 'png'])
+            [p for p in os.listdir(self.lc_path)])
         self.files = self.files[start_ind:start_ind+max_size]
         self.files = np.array(self.files)
 
@@ -82,21 +83,21 @@ class ArielMLDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, idx):
-        item_lc_path = self.lc_path / self.files[idx]
+        item_lc_path = Path(self.lc_path) / self.files[idx]
 
         img = Image.open(item_lc_path)
 
         if self.transform:
             img = self.transform(img, self.type)
 
-        if params_file is not None:
+        if self.params_file is not None:
             item_params_file = self.params_file[self.files[idx].split(".")[0]]
             target = torch.from_numpy(item_params_file.to_numpy())
         else:
             target = torch.Tensor()
 
-        return {"lc": img.to(self.device),
-                "target": target.to(self.device)}
+        return {"lc": img.float().to(self.device),
+                "target": target.float().to(self.device)}
 
     # def __getitem__(self, idx):
     #     item_lc_path = Path(self.lc_path) / self.files[idx]
@@ -117,36 +118,36 @@ class ArielMLDataset(Dataset):
     #             'target': target.to(self.device)}
 
 
-def simple_transform(x, **kwargs):
-    """Perform a simple preprocessing of the input light curve array
-    Args:
-        x: np.array
-            first dimension is time, at least 30 timesteps
-    Return:
-        preprocessed array
-    """
-    ##preprocessing##
-    try:
-        out = x.clone()
-    except Exception:
-        out = x.copy()
+# def simple_transform(x, **kwargs):
+#     """Perform a simple preprocessing of the input light curve array
+#     Args:
+#         x: np.array
+#             first dimension is time, at least 30 timesteps
+#     Return:
+#         preprocessed array
+#     """
+#     ##preprocessing##
+#     try:
+#         out = x.clone()
+#     except Exception:
+#         out = x.copy()
         
-    # Min Max Scaling
-    scaler = MinMaxScaler(feature_range=(0, 255))
-    scaler.fit(out)
-    out = scaler.transform(out)
+#     # Min Max Scaling
+#     scaler = MinMaxScaler(feature_range=(0, 255))
+#     scaler.fit(out)
+#     out = scaler.transform(out)
 
-    out = torch.from_numpy(out)
+#     out = torch.from_numpy(out)
 
-    out = transforms.RandomResizedCrop(224)(out)
-    # out = transforms.RandomRotation(30)(out)
-    # out = transforms.RandomAffine(10, translate=(0.01, 0.12), shear=(0.01, 0.03))(out)
-    out = transforms.RandomHorizontalFlip()(out)
-    out = transforms.RandomVerticalFlip()(out)
+#     out = transforms.RandomResizedCrop(224)(out)
+#     # out = transforms.RandomRotation(30)(out)
+#     # out = transforms.RandomAffine(10, translate=(0.01, 0.12), shear=(0.01, 0.03))(out)
+#     out = transforms.RandomHorizontalFlip()(out)
+#     out = transforms.RandomVerticalFlip()(out)
 
-    assert type(out) == torch.Tensor
+#     assert type(out) == torch.Tensor
     
-    return out
+#     return out
 
 
 def image_transform(x, type, **kwargs):
@@ -251,14 +252,16 @@ class TransferModel(Module):
         linear_layers = nn.Linear(hidden_dim, output_dim)
         return linear_layers
 
-    def __init__(self, model_name=None, model=None, input_dim=224), output_dim=n_wavelengths):
+    def __init__(self, model_name=None, model=None, input_dim=224, output_dim=n_wavelengths):
         """
         :var model_name: (str) name of transfer learning model. 
         :var model: (model) The actual model want to transfer learn from. 
         :var input_dim: (int, tuple?) Size of image. 
         """
+        super(TransferModel, self).__init__()
         self.model_name = model_name
         self.model = copy.deepcopy(model)
+        # self.model = model
 
         self.input_dim = input_dim
         self.output_dim = output_dim

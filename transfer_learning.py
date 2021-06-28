@@ -18,6 +18,7 @@ from utils import ArielMLDataset, TransferModel, ChallengeMetric, image_transfor
 import copy
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import os
 import pathlib
 import time
@@ -75,7 +76,7 @@ def train_model(model, criterion, loader_train, loader_val,
     best_val_score = 0.0
     challenge_metric = ChallengeMetric()
 
-    opt = torch.optim.SGD(model.parameters())
+    opt = torch.optim.SGD(model.parameters(), lr=1e-4)
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, "max", patience=2)
 
@@ -147,24 +148,29 @@ def main():
     except Exception:
         pass
 
-    lc_train_path = pathlib.Path("./training_set/noisy_train")
-    params_train_path = pathlib.Path("./training_set/params_train")
+    # lc_train_path = pathlib.Path("./training_set/noisy_train")
+    # params_train_path = pathlib.Path("./training_set/params_train")
+
+
+    lc_train_path = "./training_set/noisy_train"
+    lc_train_path = "/home/chowjunwei37/Documents/data/training_set/aug_noisy_train_img"
+    params_train_path = pd.read_csv("outputs/params_aug.csv")
     
-    dataset_train = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=0,
+    dataset_train = ArielMLDataset(lc_train_path, "train", params_train_path, shuffle=True, start_ind=0,
                                     max_size=train_size, transform=image_transform, device=device,
-                                    transpose=False)
+    )
         # Validation
-    dataset_val = ArielMLDataset(lc_train_path, params_train_path, shuffle=True, start_ind=train_size,
+    dataset_val = ArielMLDataset(lc_train_path, "val", params_train_path, shuffle=True, start_ind=train_size,
                                 max_size=val_size, transform=image_transform, device=device,
-                                transpose=False)
+                                )
     
 
     loader_train = DataLoader(dataset_train, batch_size=batch_size, 
                     shuffle=True, num_workers=3, pin_memory=True)
     loader_val = DataLoader(dataset_val, batch_size=batch_size, num_workers=2, pin_memory=True)
 
-    loader_train = DeviceDataLoader(loader_train, device)
-    loader_val = DeviceDataLoader(loader_val, device)
+    # loader_train = DeviceDataLoader(loader_train, device)
+    # loader_val = DeviceDataLoader(loader_val, device)
 
     # model = torch.hub.load("pytorch/vision:v0.9.0", "resnet34", pretrained=True)
     model_name = "efficientnet-b0"
@@ -189,8 +195,8 @@ def main():
 
 if __name__ == "__main__":
     prefix = "transfer_learning"
-    train_size = 110000
-    val_size = 15600
+    train_size = 5000
+    val_size = 2000
     batch_size = 25
     save_from = 1
 
