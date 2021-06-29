@@ -98,7 +98,7 @@ class ArielMLDataset(Dataset):
             target = torch.Tensor()
 
         return {"lc": img.float().to(self.device),
-                "target": target.float().to(self.device)}
+                "target": target.double().to(self.device)}  # NOTE HERE. 
 
     # def __getitem__(self, idx):
     #     item_lc_path = Path(self.lc_path) / self.files[idx]
@@ -246,6 +246,40 @@ class ChallengeMetric:
         return (1e4 - 2 * (weights * y * torch.abs(pred - y)).sum() / weights.sum() * 1e6)
 
 
+class FeatureModel(Module):
+    """
+    Transfer learning but do not directly fine tune nor using any weights from model. 
+    Instead, only feature extraction is being done using transferred model and this model is
+    trained based on the extracted features.
+    """
+
+    def __init__(self, H1=256, H2=1024, H3=256, input_dim=1280*7*7, output_dim=n_wavelengths):
+        """
+        :var input_dim: (int) The input dimension. Default to 1280 * 7 * 7 the output of 
+            efficient net b-0. 
+        :var output_dim: The output from the model size.
+        """
+        super(FeatureModel, self).__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+
+        self.network = Sequential(torch.nn.Linear(input_dim, H1),
+                                  torch.nn.ReLU(),
+                                  torch.nn.Linear(H1, H2),
+                                  torch.nn.ReLU(),
+                                  torch.nn.Linear(H2, H3),
+                                  torch.nn.ReLU(),
+                                  torch.nn.Linear(H3, output_dim),
+                                  )  
+
+    def __call__(self, x):
+        """Predict rp/rs from input tensor light curve x"""
+        out = torch.flatten(x, start_dim=1)  
+        out = self.network(out)
+        return out
+
+
+
 class TransferModel(Module):
     """
     Transfer learning model using EfficientNet-b0. Might try Resnet depending on time constraint. 
@@ -306,16 +340,18 @@ class TransferModel(Module):
 class Baseline(Module):
     """Baseline model for Ariel ML data challenge 2021"""
 
-    def __init__(self, H1=1024, H2=256, H3=256, input_dim=n_wavelengths*n_timesteps + 5, output_dim=n_wavelengths):
+    def __init__(self, H1=256, H2=1024, H3=256, input_dim=n_wavelengths*n_timesteps, output_dim=n_wavelengths):
         """Define the baseline model for the Ariel data challenge 2021
 
         Args:
             H1: int
-                first hidden dimension (default=1024)
+                first hidden dimension (default=256)
             H2: int
-                second hidden dimension (default=256)
+                second hidden dimension (default=1024)
+            H3: int
+                third hidden dimension (default=256)
             input_dim: int
-                input dimension (default = 55*300+6)
+                input dimension (default = 55*300)
             ourput_dim: int
                 output dimension (default = 55)
         """

@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, models, transforms
 from efficientnet_pytorch import EfficientNet
 
-from utils import ArielMLDataset, TransferModel, ChallengeMetric, image_transform
+from utils import ArielMLDataset, TransferModel, ChallengeMetric, image_transform, FeatureModel
 
 import copy
 import matplotlib.pyplot as plt
@@ -66,6 +66,92 @@ class DeviceDataLoader():
     def __len__(self):
         """Number of batches"""
         return len(self.dl)
+
+
+def train_model_feature(model, criterion, loader_train, loader_val, 
+            device=torch.device("cpu"), num_epochs=30, dir="outputs"):
+    global prefix, save_from
+
+    val_score = np.zeros((num_epochs, ), dtype=np.float32)
+    best_val_score = 0.0
+    challenge_metric = ChallengeMetric()
+
+    baseline = FeatureModel().double().to(device)
+
+    opt = torch.optim.Adam(model.parameters())
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, "max", patience=2)
+
+    try:
+        temp = glob.glob(f"{dir}/model_state_dict.pt")
+        ckpt = torch.load(temp[0])
+
+        curr_epoch = ckpt["epoch"]
+        baseline.load_state_dict(ckpt["baseline"])
+        opt.load_state_dict(ckpt["opt"])
+        scheduler.load_state_dict(ckpt["scheduler"])
+
+        print("Successfully load state dict.")
+    except Exception:
+        curr_epoch = 1
+
+        print("Failed to load state dict. Training from scratch. ")
+
+    for epoch in range(curr_epoch, num_epochs + 1):
+        print(f"Epoch {epoch}/{num_epochs}")
+        val_score = 0
+
+        baseline.train()
+
+        for k, item in enumerate(tqdm(loader_train)):
+            features = model.extract_features(item["lc"])
+            pred = baseline(features.double())
+            loss = criterion(item['target'], pred)
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+
+        baseline.eval()
+
+        for k, item in enumerate(tqdm(loader_val)):
+            features = model.extract_features(item["lc"])
+            pred = baseline(features.double())
+            loss = criterion(item["target"], pred)
+            score = challenge_metric.score(item["target"], pred)
+            
+            val_score += score.detach().item()
+
+        val_score /= len(loader_val)
+
+        scheduler.step(val_score)
+        
+        run.log("val_score", val_score)
+
+        val_scores[epoch - 1] = val_score
+
+        print(f"Val score: {round(val_score, 2)}")
+
+        if epoch >= save_from and val_score > best_val_score:
+            print("Current best val score: ", val_score)
+            best_val_score = val_score
+            best_model_wts = copy.deepcopy(model.state_dict())
+
+            torch.save({
+                "epoch": epoch,
+                "opt": opt.state_dict(),
+                "scheduler": scheduler.state_dict(),
+                "scheduler2": scheduler2.state_dict(),
+                "model": model.state_dict()
+            }, f"{dir}/model_state_dict.pt")
+
+            torch.save(model, f'{dir}/model_state_{prefix}.pt')
+
+        np.savetxt(f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
+
+        gc.collect()
+
+    return val_scores, model
+        
 
 
 def train_model(model, criterion, loader_train, loader_val, 
@@ -218,16 +304,16 @@ def main(args):
     # loader_val = DeviceDataLoader(loader_val, device)
 
     # model = torch.hub.load("pytorch/vision:v0.9.0", "resnet34", pretrained=True)
-    model_name = "efficientnet-b0"
+    model_name = "efficientnet-b1"
     image_size = 224
 
     model = EfficientNet.from_pretrained(model_name)
-    model = TransferModel(model_name, model, image_size)
+    # model = TransferModel(model_name, model, image_size)
     model = to_device(model, device)
 
     criterion = MSELoss()
 
-    val_scores, model = train_model(model, criterion, loader_train, loader_val, device, num_epochs=30)
+    val_scores, model = train_model_feature(model, criterion, loader_train, loader_val, device, num_epochs=30)
 
     np.savetxt(f'outputs/val_scores_{prefix}.txt', np.array(val_scores))
     torch.save(model, f'outputs/model_state_{prefix}.pt')
@@ -240,8 +326,8 @@ def main(args):
 
 if __name__ == "__main__":
     prefix = "transfer_learning"
-    train_size = 8000
-    val_size = 4000
+    train_size = 6000
+    val_size = 2500
     batch_size = 25
     save_from = 1
 
