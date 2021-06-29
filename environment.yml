@@ -1,0 +1,21 @@
+name: ariel environment
+dependencies:
+- python=3.7
+- scikit-learn
+- cudatoolkit=11.0
+- pytorch=1.7.1
+- torchvision=0.8.2
+- pandas
+- pip
+- numpy
+- pip:
+  - azureml-defaults
+  - azureml-mlflow
+  - azureml-dataprep[pandas]
+  - matplotlib
+  - tqdm
+  - efficientnet_pytorch
+  - torchsummary
+  - Pillow
+  - pathlib
+  - future

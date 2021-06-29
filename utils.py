@@ -10,6 +10,7 @@ import numpy as np
 from numpy.core.fromnumeric import transpose
 import torch
 from PIL import Image
+import glob
 
 from pathlib import Path
 from torch.utils.data import Dataset
@@ -68,7 +69,7 @@ class ArielMLDataset(Dataset):
         self.type = this_type
 
         self.files = sorted(
-            [p for p in os.listdir(self.lc_path)])
+            glob.glob(self.lc_path + "/*.png"))
         self.files = self.files[start_ind:start_ind+max_size]
         self.files = np.array(self.files)
 
@@ -91,7 +92,7 @@ class ArielMLDataset(Dataset):
             img = self.transform(img, self.type)
 
         if self.params_file is not None:
-            item_params_file = self.params_file[self.files[idx].split(".")[0]]
+            item_params_file = self.params_file[self.files[idx].split(".")[0].split("/")[-1]]
             target = torch.from_numpy(item_params_file.to_numpy())
         else:
             target = torch.Tensor()
@@ -151,11 +152,14 @@ class ArielMLDataset(Dataset):
 
 
 def image_transform(x, type, **kwargs):
-    # imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
     # Human protein stats. 
-    mean = torch.tensor([0.05438065, 0.05291743, 0.07920227])
-    std = torch.tensor([0.39414383, 0.33547948, 0.38544176])
+    # mean = torch.tensor([0.05438065, 0.05291743, 0.07920227])
+    # std = torch.tensor([0.39414383, 0.33547948, 0.38544176])
+
+    # Imagenet normalization. 
+    mean = torch.tensor([0.485, 0.456, 0.406])
+    std = torch.tensor([0.229, 0.224, 0.225])
 
     train_trans = [
         T.RandomResizedCrop(224),
@@ -249,7 +253,10 @@ class TransferModel(Module):
 
     @staticmethod
     def final_layer(hidden_dim, output_dim):
-        linear_layers = nn.Linear(hidden_dim, output_dim)
+        linear_layers = Sequential(nn.Linear(hidden_dim, 256),
+                                   nn.LeakyReLU(0.0003),
+                                   nn.Linear(256, output_dim)
+        )
         return linear_layers
 
     def __init__(self, model_name=None, model=None, input_dim=224, output_dim=n_wavelengths):
@@ -276,7 +283,7 @@ class TransferModel(Module):
         """
         Freeze unneeded training layers.
         """
-        for param in self.model_parameters():
+        for param in self.model.parameters():
             param.requires_grad = False
 
         for param in self.model._fc.parameters():

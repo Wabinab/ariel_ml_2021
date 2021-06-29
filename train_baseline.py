@@ -110,6 +110,7 @@ def train(batch_size, dataset_train, dataset_val, device):
 # -------------------------------------------------
 
 def main():
+    torch.multiprocessing.set_start_method("spawn")
     if torch.cuda.is_available():
         device = 'cuda'
     else:
