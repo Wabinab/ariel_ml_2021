@@ -7,15 +7,12 @@ Note the following have been summarized from the above website. All credits goes
 
 
 % ---------------------------------------------------------
-## Initial thoughts (For Rachel): 
-For the data:
-Data is very messy and some data like 0001_01_01 seems to be just flat lines without anything useful. Might need to find some way to find a good data entry and then visualize it to get an idea how to clean the data. Note that initial data cleaning had been done by the data preparation team. I don't think we can just throw everything into a model as we might want to see how to arrange it into a csv format for representation, or how to read the file with "flow_from_directory" as the data is too huge to be loaded into Colab's RAM. Though alternatively we could get a "highmem" VM in Google/Azure/etc platform to load everything onto memory. 
-
-For the model: 
-Just like the data challenge team is creating a Baseline, it might be a good idea to start with our own Baseline as well and then we could improve from there. The most important thing is to see if it works or not. Then only start tackling on the problems, then only try out different models, then only training on larger datasets (or full datasets depending on the time). 
+## Introduction
+For more information please check the **wiki** page. 
 
 % ---------------------------------------------------------
 
+## Deprecated (written at the beginning and remains here as archive)
 ### Introduction
 Trying to differentiate signals coming from stars, planets or instruments is a challenge. For example, star-spots vs exoplanets' atmosphere. This is very hard if not impossible to solve with conventional astrophysics method, hence machine learning comes into place. 
 
